@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% block title %}Login &ndash; LMSPORTAL{% endblock %}
+
+{% block content %}
+<div class="min-vh-100 d-flex align-items-center justify-content-center" style="background: linear-gradient(135deg, #1e1b4b 0%, #312e81 60%, #4f46e5 100%);">
+  <div class="card shadow-lg border-0" style="width: 100%; max-width: 420px; border-radius: 1rem; overflow: hidden;">
+    <div class="card-header text-center py-4" style="background: #4f46e5;">
+      <i class="fas fa-graduation-cap text-white" style="font-size: 2.5rem;"></i>
+      <h3 class="text-white fw-bold mt-2 mb-0">LMSPORTAL</h3>
+      <p class="text-white-50 small mb-0">Sign in to your account</p>
+    </div>
+    <div class="card-body p-4">
+      <form method="post" novalidate>
+        {% csrf_token %}
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Username</label>
+          {{ form.username }}
+          {% for error in form.username.errors %}
+            <div class="text-danger small mt-1">{{ error }}</div>
+          {% endfor %}
+        </div>
+        <div class="mb-3">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <label class="form-label fw-semibold mb-0">Password</label>
+            <a href="{% url 'users:password_reset_request' %}" class="small text-decoration-none" style="color:#4f46e5;">Forgot Password?</a>
+          </div>
+          <div class="input-group">
+            {{ form.password }}
+            <button class="btn btn-outline-secondary border-start-0" type="button" id="togglePassword">
+              <i class="fas fa-eye" id="eyeIcon"></i>
+            </button>
+          </div>
+          {% for error in form.password.errors %}
+            <div class="text-danger small mt-1">{{ error }}</div>
+          {% endfor %}
+        </div>
+
+        <script>
+          document.getElementById('togglePassword').addEventListener('click', function (e) {
+            const passwordField = document.querySelector('input[name="password"]');
+            const eyeIcon = document.getElementById('eyeIcon');
+            if (passwordField.type === 'password') {
+              passwordField.type = 'text';
+              eyeIcon.classList.replace('fa-eye', 'fa-eye-slash');
+            } else {
+              passwordField.type = 'password';
+              eyeIcon.classList.replace('fa-eye-slash', 'fa-eye');
+            }
+          });
+        </script>
+        {% if form.non_field_errors %}
+          <div class="alert alert-danger py-2">{{ form.non_field_errors }}</div>
+        {% endif %}
+        <button type="submit" class="btn w-100 py-2 fw-semibold" style="background:#4f46e5; color:#fff;">
+          <i class="fas fa-sign-in-alt me-1"></i> Sign In
+        </button>
+      </form>
+    </div>
+    <div class="card-footer text-center py-3 bg-light">
+      Don't have an account?
+      <a href="{% url 'users:register' %}" class="text-decoration-none fw-semibold" style="color:#4f46e5;">Register</a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+

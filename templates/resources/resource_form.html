@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% block title %}Upload Resource &ndash; LMSPORTAL{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center mb-4">
+  <a href="{% url 'resources:list' course.pk %}" class="text-muted me-3"><i class="fas fa-arrow-left fs-5"></i></a>
+  <h4 class="fw-bold mb-0">Upload Resource &ndash; {{ course.title }}</h4>
+</div>
+<div class="page-card" style="max-width:560px;">
+  <form method="post" enctype="multipart/form-data" novalidate>
+    {% csrf_token %}
+    <div class="row g-3">
+      <div class="col-12">
+        <label class="form-label fw-semibold">Title</label>
+        {{ form.title }}
+      </div>
+      <div class="col-md-6">
+        <label class="form-label fw-semibold">Type</label>
+        {{ form.resource_type }}
+      </div>
+      <div class="col-md-6">
+        <label class="form-label fw-semibold">Batch (optional)</label>
+        {{ form.batch }}
+      </div>
+      <div class="col-12">
+        <label class="form-label fw-semibold">Description</label>
+        {{ form.description }}
+      </div>
+      <div class="col-12">
+        <label class="form-label fw-semibold">File</label>
+        {{ form.file }}
+      </div>
+      <div class="col-12">
+        <label class="form-label fw-semibold">Or External URL</label>
+        {{ form.external_url }}
+      </div>
+      <div class="col-12">
+        <div class="form-check">
+          {{ form.is_visible }}
+          <label class="form-check-label" for="{{ form.is_visible.id_for_label }}">Visible to students</label>
+        </div>
+      </div>
+    </div>
+    <div class="d-flex gap-2 mt-4">
+      <button type="submit" class="btn" style="background:#4f46e5;color:#fff;">
+        <i class="fas fa-upload me-1"></i> Upload
+      </button>
+      <a href="{% url 'resources:list' course.pk %}" class="btn btn-outline-secondary">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}
+

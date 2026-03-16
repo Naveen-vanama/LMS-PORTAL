@@ -1,0 +1,149 @@
+﻿{% extends 'base.html' %}
+
+{% block title %}Live: {{ live_class.title }}{% endblock %}
+
+{% block content %}
+<style>
+    .live-container {
+        display: flex; height: calc(100vh - 120px); gap: 1rem;
+    }
+    .video-panel {
+        flex: 1; background: #000; border-radius: 1rem; overflow: hidden; position: relative;
+    }
+    .chat-panel {
+        width: 350px; display: flex; flex-direction: column; background: #fff; border-radius: 1rem;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05); overflow: hidden;
+    }
+    .chat-messages {
+        flex: 1; overflow-y: auto; padding: 1rem; display: flex; flex-direction: column; gap: 0.75rem;
+    }
+    .chat-input-area {
+        padding: 1rem; border-top: 1px solid #eee;
+    }
+    .msg {
+        background: #f8f9fa; padding: 0.5rem 0.75rem; border-radius: 0.75rem; max-width: 90%; align-self: flex-start;
+    }
+    .msg.me {
+        background: #e7f3ff; align-self: flex-end;
+    }
+    #jitsi-container {
+        height: 100%; width: 100%;
+    }
+</style>
+
+<div class="row mb-3">
+    <div class="col-12 d-flex justify-content-between align-items-center">
+        <div>
+            <h4 class="fw-bold mb-0 text-danger border-start border-4 border-danger ps-3">LIVE: {{ live_class.title }}</h4>
+            <span class="text-muted small">Course: {{ live_class.course.title }} | Instructor: {{ live_class.instructor.get_full_name }}</span>
+        </div>
+        <div class="d-flex gap-2 text-end">
+            {% if is_instructor %}
+            <a href="{% url 'live_classes:end' live_class.id %}" class="btn btn-outline-danger btn-sm" onclick="return confirm('End this session for everyone?')">End Session</a>
+            {% endif %}
+            <a href="{% url 'live_classes:list' live_class.course.id %}" class="btn btn-light btn-sm">Leave</a>
+        </div>
+    </div>
+</div>
+
+<div class="live-container">
+    <div class="video-panel">
+        <div id="jitsi-container"></div>
+    </div>
+
+    <!-- Chat Panel -->
+    <div class="chat-panel">
+        <div class="p-3 border-bottom bg-light fw-bold">Live Chat</div>
+        <div class="chat-messages" id="chat-log">
+            {% for msg in chat_history %}
+            <div class="msg {% if msg.user == user %}me{% endif %}">
+                <div class="fw-bold small" style="font-size: 0.7rem;">{{ msg.user.get_full_name|default:msg.user.username }}</div>
+                <div>{{ msg.message }}</div>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="chat-input-area">
+            <div class="input-group">
+                <input type="text" id="chat-message-input" class="form-control" placeholder="Type a message..." autocomplete="off">
+                <button class="btn btn-primary" id="chat-message-submit"><i class="bi bi-send"></i></button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://meet.jit.si/external_api.js"></script>
+<script>
+    // -- Jitsi Integration ------------------------------------------
+    const domain = "meet.jit.si";
+    const options = {
+        roomName: "{{ live_class.meeting_link|cut:'https://meet.jit.si/' }}",
+        width: '100%',
+        height: '100%',
+        parentNode: document.getElementById('jitsi-container'),
+        userInfo: {
+            displayName: "{{ user.get_full_name|default:user.username }}"
+        },
+        interfaceConfigOverwrite: {
+            TOOLBAR_BUTTONS: [
+                'microphone', 'camera', 'closedcaptions', 'desktop', 'embedmeeting', 'fullscreen',
+                'fodeviceselection', 'hangup', 'profile', 'chat', 'recording',
+                'livestreaming', 'etherpad', 'sharedvideo', 'settings', 'raisehand',
+                'videoquality', 'filmstrip', 'invite', 'feedback', 'stats', 'shortcuts',
+                'tileview', 'videobackgroundblur', 'download', 'help', 'mute-everyone',
+                'security'
+            ],
+        }
+    };
+    const api = new JitsiMeetExternalAPI(domain, options);
+
+    // -- WebSocket Chat ------------------------------------------
+    const classId = "{{ live_class.id }}";
+    const chatLog = document.getElementById('chat-log');
+    const msgInput = document.getElementById('chat-message-input');
+    
+    const chatSocket = new WebSocket(
+        (window.location.protocol === 'https:' ? 'wss://' : 'ws://')
+        + window.location.host
+        + '/ws/live-chat/' + classId + '/'
+    );
+
+    chatSocket.onmessage = function(e) {
+        const data = json_parse(e.data);
+        const isMe = data.username === "{{ user.username }}";
+        
+        const msgDiv = document.createElement('div');
+        msgDiv.className = 'msg' + (isMe ? ' me' : '');
+        msgDiv.innerHTML = `
+            <div class="fw-bold small" style="font-size: 0.7rem;">${data.full_name || data.username}</div>
+            <div>${data.message}</div>
+        `;
+        chatLog.appendChild(msgDiv);
+        chatLog.scrollTop = chatLog.scrollHeight;
+    };
+
+    function json_parse(str) { try { return JSON.parse(str); } catch(e) { return {}; } }
+
+    msgInput.focus();
+    msgInput.onkeyup = function(e) {
+        if (e.keyCode === 13) {  // Enter key
+            document.getElementById('chat-message-submit').click();
+        }
+    };
+
+    document.getElementById('chat-message-submit').onclick = function(e) {
+        const message = msgInput.value;
+        if (message.trim() === "") return;
+        chatSocket.send(JSON.stringify({
+            'message': message
+        }));
+        msgInput.value = '';
+    };
+
+    // Auto scroll chat to bottom
+    chatLog.scrollTop = chatLog.scrollHeight;
+</script>
+{% endblock %}
+

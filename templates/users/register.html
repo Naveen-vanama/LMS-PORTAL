@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% block title %}Register &ndash; LMSPORTAL{% endblock %}
+
+{% block content %}
+<div class="min-vh-100 d-flex align-items-center justify-content-center py-5"
+     style="background: linear-gradient(135deg, #1e1b4b 0%, #312e81 60%, #4f46e5 100%);">
+  <div class="card shadow-lg border-0" style="width: 100%; max-width: 500px; border-radius: 1rem; overflow: hidden;">
+    <div class="card-header text-center py-4" style="background: #4f46e5;">
+      <i class="fas fa-user-plus text-white" style="font-size: 2rem;"></i>
+      <h4 class="text-white fw-bold mt-2 mb-0">Create Account</h4>
+    </div>
+    <div class="card-body p-4">
+      <form method="post" novalidate>
+        {% csrf_token %}
+        <div class="row g-3">
+          <div class="col-6">
+            <label class="form-label fw-semibold">First Name</label>
+            {{ form.first_name }}
+          </div>
+          <div class="col-6">
+            <label class="form-label fw-semibold">Last Name</label>
+            {{ form.last_name }}
+          </div>
+          <div class="col-12">
+            <label class="form-label fw-semibold">Username</label>
+            {{ form.username }}
+          </div>
+          <div class="col-12">
+            <label class="form-label fw-semibold">Email</label>
+            {{ form.email }}
+          </div>
+          <div class="col-12">
+            <label class="form-label fw-semibold">Role</label>
+            {{ form.role }}
+          </div>
+          <div class="col-6">
+            <label class="form-label fw-semibold">Password</label>
+            <div class="input-group">
+              {{ form.password1 }}
+              <button class="btn btn-outline-secondary border-start-0" type="button" onclick="togglePass('id_password1', 'eye1')">
+                <i class="fas fa-eye" id="eye1"></i>
+              </button>
+            </div>
+          </div>
+          <div class="col-6">
+            <label class="form-label fw-semibold">Confirm Password</label>
+            <div class="input-group">
+              {{ form.password2 }}
+              <button class="btn btn-outline-secondary border-start-0" type="button" onclick="togglePass('id_password2', 'eye2')">
+                <i class="fas fa-eye" id="eye2"></i>
+              </button>
+            </div>
+          </div>
+
+          <script>
+            function togglePass(fieldId, iconId) {
+              const field = document.getElementById(fieldId);
+              const icon = document.getElementById(iconId);
+              if (field.type === 'password') {
+                field.type = 'text';
+                icon.classList.replace('fa-eye', 'fa-eye-slash');
+              } else {
+                field.type = 'password';
+                icon.classList.replace('fa-eye-slash', 'fa-eye');
+              }
+            }
+          </script>
+        </div>
+        {% if form.errors %}
+          <div class="alert alert-danger mt-3 py-2">
+            {% for field in form %}{% for error in field.errors %}<div>{{ field.label }}: {{ error }}</div>{% endfor %}{% endfor %}
+            {% for error in form.non_field_errors %}<div>{{ error }}</div>{% endfor %}
+          </div>
+        {% endif %}
+        <button type="submit" class="btn w-100 mt-3 py-2 fw-semibold" style="background:#4f46e5; color:#fff;">
+          <i class="fas fa-check-circle me-1"></i> Create Account
+        </button>
+      </form>
+    </div>
+    <div class="card-footer text-center py-3 bg-light">
+      Already have an account?
+      <a href="{% url 'users:login' %}" class="text-decoration-none fw-semibold" style="color:#4f46e5;">Sign In</a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% block title %}My Profile &ndash; LMSPORTAL{% endblock %}
+
+{% block content %}
+<h4 class="fw-bold mb-4"><i class="fas fa-user-circle me-2"></i>My Profile</h4>
+<div class="row g-4">
+  <div class="col-md-3 text-center">
+    <div class="page-card">
+      {% if user.profile_picture %}
+        <img src="{{ user.profile_picture.url }}" class="rounded-circle mb-3" width="120" height="120" style="object-fit:cover;">
+      {% else %}
+        <div class="rounded-circle bg-primary bg-opacity-10 d-inline-flex align-items-center justify-content-center mb-3"
+             style="width:120px;height:120px;">
+          <i class="fas fa-user text-primary" style="font-size:3rem;"></i>
+        </div>
+      {% endif %}
+      <h5 class="fw-bold mb-1">{{ user.get_full_name|default:user.username }}</h5>
+      <span class="badge badge-role-{{ user.role }} rounded-pill px-3">{{ user.get_role_display }}</span>
+      <div class="text-muted small mt-2">{{ user.email }}</div>
+    </div>
+  </div>
+  <div class="col-md-9">
+    <div class="page-card">
+      <h6 class="fw-semibold mb-3">Edit Profile</h6>
+      <form method="post" enctype="multipart/form-data" novalidate>
+        {% csrf_token %}
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">First Name</label>
+            {{ form.first_name }}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Last Name</label>
+            {{ form.last_name }}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Email</label>
+            {{ form.email }}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Phone</label>
+            {{ form.phone }}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Date of Birth</label>
+            {{ form.date_of_birth }}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Profile Picture</label>
+            {{ form.profile_picture }}
+          </div>
+          <div class="col-12">
+            <label class="form-label fw-semibold">Bio</label>
+            {{ form.bio }}
+          </div>
+        </div>
+        <button type="submit" class="btn mt-3" style="background:#4f46e5;color:#fff;">
+          <i class="fas fa-save me-1"></i> Save Changes
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+

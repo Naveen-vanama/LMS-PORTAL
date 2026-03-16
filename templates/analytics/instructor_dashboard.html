@@ -1,0 +1,136 @@
+{% extends 'base.html' %}
+
+{% block title %}Course Analytics - {{ course.title }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <a href="{% url 'courses:detail' course.id %}" class="text-muted small text-decoration-none">
+                <i class="fas fa-arrow-left me-1"></i>Back to Course
+            </a>
+            <h3 class="fw-bold mb-0 mt-1">Analytics: {{ course.title }}</h3>
+        </div>
+        <div class="text-end">
+            <div class="fw-bold text-success display-6">${{ analytics.total_revenue }}</div>
+            <div class="text-muted small fw-semibold uppercase">Total Revenue</div>
+        </div>
+    </div>
+
+    <!-- Top Metrics -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="page-card text-center p-3 shadow-sm border-0 bg-primary bg-opacity-10 h-100 d-flex flex-column justify-content-center">
+                <div class="h2 fw-bold text-primary mb-0">{{ analytics.total_students }}</div>
+                <div class="text-muted small fw-semibold uppercase mt-1">Enrolled Students</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="page-card text-center p-3 shadow-sm border-0 bg-info bg-opacity-10 h-100 d-flex flex-column justify-content-center">
+                <div class="h2 fw-bold text-info mb-0">{{ analytics.completion_rate }}%</div>
+                <div class="text-muted small fw-semibold uppercase mt-1">Completion Rate</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="page-card text-center p-3 shadow-sm border-0 bg-warning bg-opacity-10 h-100 d-flex flex-column justify-content-center">
+                <div class="h2 fw-bold text-warning mb-0">{{ analytics.avg_quiz_score }}%</div>
+                <div class="text-muted small fw-semibold uppercase mt-1">Avg Quiz Score</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Quiz Performance Chart -->
+        <div class="col-lg-8">
+            <div class="page-card shadow-sm h-100">
+                <h6 class="fw-bold mb-4">Quizzes Performance & Engagement</h6>
+                <canvas id="performanceChart" height="150"></canvas>
+            </div>
+        </div>
+
+        <!-- Insights -->
+        <div class="col-lg-4">
+            <div class="page-card shadow-sm h-100">
+                <h6 class="fw-bold mb-3 d-flex align-items-center">
+                    <i class="fas fa-lightbulb text-warning me-2"></i>Instructor Insights
+                </h6>
+                <div class="list-group list-group-flush border-0">
+                    {% for insight in analytics.insights %}
+                        <div class="list-group-item bg-transparent border-0 px-0 py-3 d-flex align-items-start">
+                            <i class="fas fa-info-circle text-primary me-3 mt-1"></i>
+                            <span class="small">{{ insight }}</span>
+                        </div>
+                    {% empty %}
+                        <p class="text-muted small">No insights available yet. More student data is needed.</p>
+                    {% endfor %}
+                </div>
+                
+                <hr class="my-4">
+                
+                <div class="alert alert-secondary border-0 bg-light small">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Analytics are cached and updated hourly. Use these patterns to identify students who may need extra support.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const ctx = document.getElementById('performanceChart').getContext('2d');
+    const quizData = {{ analytics.quiz_performances|safe }};
+    
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: quizData.map(q => q.title),
+            datasets: [
+                {
+                    label: 'Avg Score (%)',
+                    data: quizData.map(q => q.avg_score),
+                    backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                    borderColor: 'rgba(79, 70, 229, 1)',
+                    borderWidth: 3,
+                    tension: 0.4,
+                    fill: true,
+                    yAxisID: 'y',
+                },
+                {
+                    label: 'Attempts',
+                    data: quizData.map(q => q.attempts),
+                    backgroundColor: 'rgba(16, 185, 129, 0.6)',
+                    borderColor: 'rgba(16, 185, 129, 1)',
+                    type: 'bar',
+                    yAxisID: 'y1',
+                    borderRadius: 4
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    beginAtZero: true,
+                    max: 100,
+                    title: { display: true, text: 'Score %' }
+                },
+                y1: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    grid: { drawOnChartArea: false },
+                    title: { display: true, text: 'Attempts' }
+                },
+                x: {
+                    grid: { display: false }
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}
+

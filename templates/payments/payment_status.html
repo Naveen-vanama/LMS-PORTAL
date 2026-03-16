@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+{% block title %}Payment Status &ndash; LMSPORTAL{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-8 col-lg-6">
+    <div class="page-card text-center shadow-lg border-0">
+      {% if payment.status == 'completed' %}
+        <div class="mb-4">
+          <div class="bg-success bg-opacity-10 text-success rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
+            <i class="fas fa-check display-4"></i>
+          </div>
+          <h2 class="fw-bold text-success">Payment Successful!</h2>
+          <p class="text-muted">Thank you for your enrollment. Your seat is confirmed.</p>
+        </div>
+      {% elif payment.status == 'pending' %}
+        <div class="mb-4">
+          <div class="bg-warning bg-opacity-10 text-warning rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
+            <i class="fas fa-hourglass-half display-4"></i>
+          </div>
+          <h2 class="fw-bold text-warning">Payment Pending</h2>
+          <p class="text-muted">We are waiting for confirmation of your transaction.</p>
+        </div>
+      {% else %}
+        <div class="mb-4">
+          <div class="bg-danger bg-opacity-10 text-danger rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
+            <i class="fas fa-exclamation-triangle display-4"></i>
+          </div>
+          <h2 class="fw-bold text-danger">Payment {{ payment.status|title }}</h2>
+          <p class="text-muted">Something went wrong with your transaction.</p>
+        </div>
+      {% endif %}
+
+      <div class="bg-light rounded p-4 text-start mb-4">
+        <div class="row mb-2">
+          <div class="col-5 text-muted">Transaction ID:</div>
+          <div class="col-7 fw-bold"><code>{{ payment.transaction_id }}</code></div>
+        </div>
+        <div class="row mb-2">
+          <div class="col-5 text-muted">Course:</div>
+          <div class="col-7 fw-bold">{{ payment.enrollment.batch.course.title }}</div>
+        </div>
+        <div class="row mb-2">
+          <div class="col-5 text-muted">Amount:</div>
+          <div class="col-7 fw-bold">&#8377;{{ payment.amount }}</div>
+        </div>
+        <div class="row mb-2">
+          <div class="col-5 text-muted">Method:</div>
+          <div class="col-7 fw-bold">{{ payment.get_payment_method_display }}</div>
+        </div>
+        {% if payment.paid_at %}
+        <div class="row">
+          <div class="col-5 text-muted">Paid On:</div>
+          <div class="col-7 fw-bold">{{ payment.paid_at|date:"M d, Y H:i" }}</div>
+        </div>
+        {% endif %}
+      </div>
+
+      <div class="d-grid gap-2">
+        {% if payment.status == 'completed' %}
+          <div class="d-grid gap-2 mb-2">
+            <a href="{% url 'enrollments:list' %}" class="btn btn-primary btn-lg">Go to My Courses</a>
+            <a href="{% url 'payments:download_receipt' payment.pk %}" class="btn btn-success btn-lg">
+              <i class="fas fa-file-pdf me-2"></i>Download Receipt
+            </a>
+          </div>
+        {% else %}
+          <a href="{% url 'payments:checkout' payment.enrollment.pk %}" class="btn btn-primary btn-lg">Retry Payment</a>
+        {% endif %}
+        <a href="{% url 'users:dashboard' %}" class="btn btn-outline-secondary">Go to Dashboard</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,63 @@
+﻿{% extends 'base.html' %}
+{% block title %}Issued Certificates &ndash; LMSPORTAL{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-4">
+  <h4 class="fw-bold mb-0"><i class="bi bi-award-fill me-2 text-warning"></i>Issued Certificates</h4>
+  <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-2">{{ certificates|length }} certificate{{ certificates|length|pluralize }}</span>
+</div>
+
+<!-- Search Bar -->
+<div class="mb-4">
+  <form method="get" class="d-flex gap-2">
+    <div class="input-group">
+      <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+      <input type="text" name="q" value="{{ query }}" class="form-control border-start-0 ps-0" placeholder="Search by student, course, or certificate ID..." aria-label="Search">
+    </div>
+    <button type="submit" class="btn btn-primary px-4">Search</button>
+    {% if query %}
+      <a href="{% url 'certificates:list' %}" class="btn btn-outline-secondary">Clear</a>
+    {% endif %}
+  </form>
+</div>
+
+<div class="page-card">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>Certificate ID</th>
+          <th>Student</th>
+          <th>Course</th>
+          <th>Issue Date</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for cert in certificates %}
+        <tr>
+          <td><code class="fw-bold text-dark">{{ cert.certificate_id }}</code></td>
+          <td>
+            <div class="fw-semibold">{{ cert.enrollment.student.get_full_name|default:cert.enrollment.student.username }}</div>
+            <div class="text-muted small">{{ cert.enrollment.student.email }}</div>
+          </td>
+          <td>
+            <div class="fw-semibold">{{ cert.enrollment.batch.course.title }}</div>
+            <div class="text-muted small">{{ cert.enrollment.batch.course.code }}</div>
+          </td>
+          <td class="text-muted small">{{ cert.issued_date|date:"F d, Y" }}</td>
+          <td>
+            <a href="{% url 'certificates:download_certificate' cert.certificate_id %}" class="btn btn-sm btn-outline-success">
+              <i class="bi bi-download"></i> Download
+            </a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" class="text-center text-muted py-5">No certificates found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+

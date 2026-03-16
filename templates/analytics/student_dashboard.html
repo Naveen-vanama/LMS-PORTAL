@@ -1,0 +1,174 @@
+{% extends 'base.html' %}
+
+{% block title %}Learning Analytics - {{ user.username }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="fw-bold mb-0">Learning Analytics</h3>
+        <span class="text-muted">Last updated: {% now "H:i" %}</span>
+    </div>
+
+    <!-- Top Metrics -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="page-card text-center p-3 shadow-sm border-0 bg-primary bg-opacity-10">
+                <div class="display-6 fw-bold text-primary">{{ analytics.avg_progress }}%</div>
+                <div class="text-muted small fw-semibold uppercase mt-1">Average Progress</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="page-card text-center p-3 shadow-sm border-0 bg-success bg-opacity-10">
+                <div class="display-6 fw-bold text-success">{{ analytics.lessons_completed }}</div>
+                <div class="text-muted small fw-semibold uppercase mt-1">Lessons Completed</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="page-card text-center p-3 shadow-sm border-0 bg-warning bg-opacity-10">
+                <div class="display-6 fw-bold text-warning">{{ analytics.quiz_accuracy }}%</div>
+                <div class="text-muted small fw-semibold uppercase mt-1">Quiz Accuracy</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="page-card text-center p-3 shadow-sm border-0 bg-danger bg-opacity-10">
+                <div class="display-6 fw-bold text-danger">{{ analytics.current_streak }} <i class="fas fa-fire animate-fire"></i></div>
+                <div class="text-muted small fw-semibold uppercase mt-1">Day Streak</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Daily Quiz Challenge -->
+    <div class="page-card shadow-sm border-0 mb-4 bg-gradient-light">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="fw-bold mb-0">Daily Quiz Challenge <i class="fas fa-fire text-warning animate-fire"></i></h5>
+            <span class="badge bg-danger rounded-pill">Expires: 24h</span>
+        </div>
+        
+        {% if analytics.daily_quizzes %}
+            {% for dq in analytics.daily_quizzes %}
+                <div class="p-3 border rounded mb-2 bg-white d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="fw-bold text-primary">{{ dq.course_title }}</div>
+                        <div class="text-muted small">Today's Topic: <span class="fw-semibold text-dark">{{ dq.topic }}</span></div>
+                        <div class="text-muted small">Questions: {{ dq.questions_count }}</div>
+                    </div>
+                    <a href="{% url 'quizzes:take' dq.quiz_id %}" class="btn btn-primary rounded-pill px-4">Start Quiz</a>
+                </div>
+            {% endfor %}
+        {% elif analytics.startable_quizzes %}
+            {% for sq in analytics.startable_quizzes %}
+                <div class="p-3 border rounded mb-2 bg-white d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="fw-bold">{{ sq.course_title }}</div>
+                        <div class="text-muted small">Generate your personalized daily quiz for today!</div>
+                    </div>
+                    <a href="{% url 'quizzes:start_daily' sq.course_id %}" class="btn btn-outline-primary rounded-pill px-4">Generate Quiz</a>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p class="text-muted p-3 mb-0">No active courses to generate daily quizzes from. Enroll in a course to get started!</p>
+        {% endif %}
+    </div>
+
+    {% if analytics.revision_quizzes %}
+    <div class="page-card shadow-sm border-0 mb-4 bg-primary bg-opacity-10">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="fw-bold mb-0 text-primary">Revision Quizzes Available <i class="fas fa-book-open"></i></h5>
+            <span class="badge bg-primary rounded-pill">New</span>
+        </div>
+        {% for rq in analytics.revision_quizzes %}
+            <div class="p-3 border rounded mb-2 bg-white d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="fw-bold text-dark">{{ rq.course_title }}</div>
+                    <div class="text-muted small">Topics Covered: <span class="fw-semibold text-primary">{{ rq.topics }}</span></div>
+                    <div class="text-muted small">Questions: {{ rq.questions_count }}</div>
+                </div>
+                <a href="{% url 'quizzes:take' rq.quiz_id %}" class="btn btn-primary rounded-pill px-4">Start Quiz</a>
+            </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="row g-4">
+        <!-- Weekly Heatmap -->
+        <div class="col-lg-8">
+            <div class="page-card shadow-sm h-100">
+                <h6 class="fw-bold mb-4">Weekly Learning Activity (Minutes)</h6>
+                <canvas id="activityChart" height="120"></canvas>
+            </div>
+        </div>
+
+        <!-- Extra Metrics -->
+        <div class="col-lg-4">
+            <div class="page-card shadow-sm mb-4">
+                <h6 class="fw-bold mb-3">Overall Impact</h6>
+                <div class="d-flex align-items-center mb-3">
+                    <div class="flex-shrink-0 bg-primary bg-opacity-10 rounded p-2 me-3">
+                        <i class="fas fa-history text-primary fs-4"></i>
+                    </div>
+                    <div>
+                        <div class="fw-bold">{{ analytics.total_time_learning }} Hours</div>
+                        <div class="text-muted small">Total Learning Time</div>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0 bg-success bg-opacity-10 rounded p-2 me-3">
+                        <i class="fas fa-award text-success fs-4"></i>
+                    </div>
+                    <div>
+                        <div class="fw-bold">{{ analytics.certificates_earned }} Certificates</div>
+                        <div class="text-muted small">Earned Achievements</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="page-card shadow-sm">
+                <h6 class="fw-bold mb-3">AI Learning Tip</h6>
+                <p class="small text-muted mb-0">
+                    {% if analytics.quiz_accuracy < 70 %}
+                        Your quiz accuracy is a bit low. Try revisiting "Lesson Explanation" sections to strengthen your foundation.
+                    {% elif analytics.current_streak < 3 %}
+                        Don't lose your momentum! Completing a 5-minute quiz today will keep your streak alive.
+                    {% else %}
+                        Great job! You're in a high-performance zone. Keep it up to finish your courses ahead of schedule.
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const ctx = document.getElementById('activityChart').getContext('2d');
+    const heatmapData = {{ analytics.heatmap|safe }};
+    
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: heatmapData.map(d => d.day),
+            datasets: [{
+                label: 'Minutes Spent',
+                data: heatmapData.map(d => d.value),
+                backgroundColor: 'rgba(79, 70, 229, 0.6)',
+                borderColor: 'rgba(79, 70, 229, 1)',
+                borderWidth: 1,
+                borderRadius: 5
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: { display: false }
+                },
+                x: {
+                    grid: { display: false }
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}
+

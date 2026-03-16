@@ -1,0 +1,168 @@
+{% extends 'base.html' %}
+{% block title %}Checkout &ndash; LMSPORTAL{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-8 col-lg-6">
+    <div class="page-card shadow-lg border-0 mb-5 relative">
+      <div class="text-center mb-4">
+        <div class="display-6 fw-bold text-primary mb-2">Checkout</div>
+        <p class="text-muted">Complete your payment for <strong>{{ enrollment.batch.course.title }}</strong></p>
+      </div>
+
+      <div class="bg-light rounded p-4 mb-4">
+        <div class="d-flex justify-content-between mb-2">
+          <span class="text-muted">Course Total:</span>
+          <span class="fw-bold">&#8377;{{ enrollment.batch.course.price }}</span>
+        </div>
+        <div class="d-flex justify-content-between mb-2">
+          <span class="text-muted">Total Paid:</span>
+          <span class="text-success fw-bold">&#8377;{{ enrollment.total_paid }}</span>
+        </div>
+        <hr>
+        <div class="d-flex justify-content-between align-items-center">
+          <span class="h5 mb-0">Balance Due:</span>
+          <span class="h4 mb-0 fw-bold text-danger">&#8377;{{ balance }}</span>
+        </div>
+      </div>
+
+      <form id="razorpayForm" action="{% url 'payments:process' enrollment.pk %}" method="post" style="display:none;">
+        {% csrf_token %}
+        <input type="hidden" name="razorpay_payment_id" id="razorpay_payment_id">
+        <input type="hidden" name="razorpay_order_id" id="razorpay_order_id">
+        <input type="hidden" name="razorpay_signature" id="razorpay_signature">
+        <input type="hidden" name="amount" id="final_amount">
+      </form>
+
+      <div id="paymentErrorAlert" class="alert alert-danger d-none shadow-sm border-2">
+        <div class="d-flex align-items-center">
+          <i class="bi bi-exclamation-triangle-fill fs-4 me-3"></i>
+          <div>
+            <div class="fw-bold">Payment Setup Failed</div>
+            <div id="errorMessage" class="small"></div>
+          </div>
+        </div>
+        <div class="mt-3 text-center border-top pt-2">
+          <p class="small mb-2">You can test the app using the simulator below while you setup your API keys:</p>
+          <form action="{% url 'payments:manual_verify' enrollment.pk %}" method="post">
+            {% csrf_token %}
+            <input type="hidden" name="amount" id="manual_amount">
+            <button type="submit" class="btn btn-sm btn-outline-danger px-4">Run Simulator (Skip API)</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="mb-4" id="amountSelector">
+        <label class="form-label fw-bold">Amount to Pay (INR)</label>
+        <div class="input-group input-group-lg">
+          <span class="input-group-text bg-white border-end-0">&#8377;</span>
+          <input type="number" id="paymentAmount" class="form-control border-start-0 fw-bold text-primary" 
+                 value="{{ balance }}" min="1" max="{{ balance }}" step="0.01">
+        </div>
+        <p class="text-muted small mt-1">Pay the full balance or a partial amount via Razorpay.</p>
+      </div>
+
+      <button type="button" id="payBtn" class="btn btn-primary btn-lg w-100 py-3 fw-bold shadow-sm" style="background:#334155; border:none;">
+        <i class="bi bi-credit-card-2-back me-2"></i>Pay &#8377;<span id="displayAmount">{{ balance }}</span> via Razorpay
+      </button>
+
+      <p class="text-center text-muted small mt-3">
+        <i class="bi bi-shield-check me-1"></i>Secure Payments Powered by Razorpay
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- Razorpay Script -->
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const payBtn = document.getElementById('payBtn');
+  const paymentAmount = document.getElementById('paymentAmount');
+  const displayAmount = document.getElementById('displayAmount');
+  const errorAlert = document.getElementById('paymentErrorAlert');
+  const errorMessage = document.getElementById('errorMessage');
+  const manualAmount = document.getElementById('manual_amount');
+  const balanceLimit = parseFloat("{{ balance }}");
+
+  paymentAmount.addEventListener('input', function() {
+    let val = parseFloat(this.value) || 0;
+    if (val > balanceLimit) val = balanceLimit;
+    displayAmount.innerText = val.toFixed(2);
+    manualAmount.value = val.toFixed(2);
+  });
+  
+  // Initial sync
+  manualAmount.value = paymentAmount.value;
+
+  payBtn.addEventListener('click', async function() {
+    const amount = parseFloat(paymentAmount.value) || 0;
+    if (amount <= 0) {
+      alert("Please enter a valid amount.");
+      return;
+    }
+
+    payBtn.disabled = true;
+    payBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Initiating...';
+    errorAlert.classList.add('d-none');
+
+    try {
+      const resp = await fetch("{% url 'payments:create_order' enrollment.pk %}", {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify({ amount: amount })
+      });
+
+      const data = await resp.json();
+      
+      if (!resp.ok) {
+        throw new Error(data.error || "Order creation failed");
+      }
+
+      const options = {
+        "key": "{{ razorpay_key_id }}",
+        "amount": (amount * 100).toString(),
+        "currency": "INR",
+        "name": "LMSPORTAL",
+        "description": "Course Fee Payment",
+        "order_id": data.order_id,
+        "handler": function (response) {
+          document.getElementById('razorpay_payment_id').value = response.razorpay_payment_id;
+          document.getElementById('razorpay_order_id').value = response.razorpay_order_id;
+          document.getElementById('razorpay_signature').value = response.razorpay_signature;
+          document.getElementById('final_amount').value = amount;
+          document.getElementById('razorpayForm').submit();
+        },
+        "prefill": {
+          "name": "{{ request.user.get_full_name }}",
+          "email": "{{ request.user.email }}",
+          "contact": "{{ request.user.phone|default:'' }}"
+        },
+        "theme": { "color": "#1e1b4b" },
+        "modal": {
+          "ondismiss": function() {
+            payBtn.disabled = false;
+            payBtn.innerHTML = '<i class="bi bi-credit-card-2-back me-2"></i>Pay &#8377;' + amount.toFixed(2) + ' via Razorpay';
+          }
+        }
+      };
+      
+      const rzp = new Razorpay(options);
+      rzp.open();
+
+    } catch (err) {
+      console.error(err);
+      errorMessage.innerText = err.message;
+      errorAlert.classList.remove('d-none');
+      payBtn.disabled = false;
+      payBtn.innerHTML = '<i class="bi bi-credit-card-2-back me-2"></i>Pay &#8377;' + amount.toFixed(2) + ' via Razorpay';
+    }
+  });
+});
+</script>
+{% endblock %}
+

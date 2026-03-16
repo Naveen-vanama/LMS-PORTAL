@@ -1,0 +1,64 @@
+﻿{% extends 'base.html' %}
+{% block title %}Edit Revision Quiz &ndash; {{ quiz.title }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <a href="{% url 'quizzes:list' quiz.course.id %}" class="text-muted small text-decoration-none">
+                <i class="bi bi-arrow-left me-1"></i>Back to Quizzes
+            </a>
+            <h4 class="fw-bold mb-0 mt-1">Edit Revision Quiz</h4>
+            <p class="text-muted mb-0 small">{{ quiz.title }}</p>
+        </div>
+    </div>
+
+    <form method="POST">
+        {% csrf_token %}
+        
+        {% for q in questions %}
+        <div class="page-card mb-4 shadow-sm border-start border-4 border-primary">
+            <h6 class="fw-bold text-primary mb-3">Question {{ forloop.counter }} ({{ q.get_question_type_display }})</h6>
+            
+            <div class="mb-3">
+                <label class="form-label fw-bold small">Question Text</label>
+                <textarea name="q_{{ q.id }}_text" class="form-control" rows="2" required>{{ q.question_text }}</textarea>
+            </div>
+
+            {% if q.question_type == 'mcq' or q.question_type == 'true_false' %}
+            <div class="mb-3">
+                <label class="form-label fw-bold small">Options</label>
+                {% for opt in q.options %}
+                <div class="input-group mb-2 shadow-sm">
+                    <span class="input-group-text bg-light">Option {{ forloop.counter }}</span>
+                    <input type="text" name="q_{{ q.id }}_options" class="form-control" value="{{ opt }}" required>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label fw-bold small">Correct Answer</label>
+                    <input type="text" name="q_{{ q.id }}_answer" class="form-control" value="{{ q.correct_answer }}" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-bold small">Explanation</label>
+                    <textarea name="q_{{ q.id }}_explanation" class="form-control" rows="1">{{ q.explanation }}</textarea>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary px-5 rounded-pill shadow-sm fw-bold">
+                Save Changes
+            </button>
+            <a href="{% url 'quizzes:list' quiz.course.id %}" class="btn btn-outline-secondary px-4 rounded-pill">
+                Cancel
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}
+

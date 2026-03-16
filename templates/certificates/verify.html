@@ -1,0 +1,75 @@
+﻿{% extends 'base.html' %}
+{% block title %}Verify Certificate &ndash; Naveen LMS{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-5">
+  <div class="col-md-7">
+    <div class="card border-0 shadow-lg overflow-hidden" style="border-radius: 1.25rem;">
+      <div class="bg-primary bg-gradient p-4 text-center text-white">
+        <i class="bi bi-patch-check-fill display-4 mb-2"></i>
+        <h3 class="fw-bold mb-0">Certificate Verified</h3>
+        <p class="opacity-75 mb-0">Authentic Digital Credential</p>
+      </div>
+      
+      <div class="card-body p-4 p-md-5">
+        <div class="text-center mb-5">
+          <p class="text-muted small text-uppercase fw-bold ls-widest mb-2">This is to certify that</p>
+          <h2 class="fw-bold text-dark">{{ cert.student.get_full_name|default:cert.student.username|upper }}</h2>
+          <hr class="w-25 mx-auto border-2 border-primary opacity-25">
+        </div>
+
+        <div class="row g-4">
+          <div class="col-sm-6">
+            <label class="text-muted small fw-semibold d-block">Course Title</label>
+            <p class="fw-bold fs-5 mb-0">{{ cert.course.title }}</p>
+            <span class="badge bg-light text-primary border">{{ cert.course.code }}</span>
+          </div>
+          <div class="col-sm-6 text-sm-end">
+            <label class="text-muted small fw-semibold d-block">Completion Progress</label>
+            <p class="fw-bold fs-5 mb-0 text-success">{{ cert.completion_percentage|floatformat:0 }}% Complete</p>
+          </div>
+          
+          <div class="col-12"><hr class="my-2 opacity-10"></div>
+          
+          <div class="col-sm-6">
+            <label class="text-muted small fw-semibold d-block">Issue Date</label>
+            <p class="fw-bold mb-0">{{ cert.issued_date|date:"F d, Y" }}</p>
+          </div>
+          <div class="col-sm-6 text-sm-end">
+            <label class="text-muted small fw-semibold d-block">Certificate ID</label>
+            <code class="fw-bold text-dark fs-7">{{ cert.certificate_id }}</code>
+          </div>
+          
+          <div class="col-12">
+             <div class="p-3 bg-light rounded-3 d-flex align-items-center gap-3">
+               <i class="bi bi-shield-lock-fill text-primary fs-3"></i>
+               <div>
+                 <div class="fw-bold small">Verified Credential</div>
+                 <div class="text-muted small">This document was issued by Naveen LMS and has been electronically verified against our records.</div>
+               </div>
+             </div>
+          </div>
+        </div>
+
+        <div class="text-center mt-5">
+          <a href="{% url 'users:dashboard' %}" class="btn btn-outline-primary px-4 rounded-pill">Back to Portal</a>
+          {% if user.is_authenticated %}
+          <a href="{% url 'certificates:download_certificate' cert.certificate_id %}" class="btn btn-success px-4 rounded-pill ms-2">
+            <i class="bi bi-download me-1"></i> Download PDF
+          </a>
+          {% endif %}
+        </div>
+      </div>
+      <div class="card-footer bg-light border-0 py-3 text-center">
+        <small class="text-muted">Verification URL: https://yourdomain.com/certificates/verify/{{ cert.id }}/</small>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.ls-widest { letter-spacing: 0.15em; }
+.fs-7 { font-size: 0.875rem; }
+</style>
+{% endblock %}
+

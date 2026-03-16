@@ -1,0 +1,112 @@
+﻿{% extends "base.html" %}
+{% block title %}Result &ndash; {{ assignment.title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+  @keyframes scoreReveal {
+    from { transform: scale(0.5); opacity: 0; }
+    to   { transform: scale(1);   opacity: 1; }
+  }
+  .score-circle {
+    width: 140px; height: 140px;
+    border-radius: 50%;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    font-weight: 800;
+    animation: scoreReveal .5s cubic-bezier(.34,1.56,.64,1) both;
+  }
+  .score-high  { background: linear-gradient(135deg,#065f46,#059669); color:#fff; box-shadow:0 8px 30px rgba(5,150,105,.35); }
+  .score-mid   { background: linear-gradient(135deg,#92400e,#d97706); color:#fff; box-shadow:0 8px 30px rgba(217,119,6,.35); }
+  .score-low   { background: linear-gradient(135deg,#991b1b,#dc2626); color:#fff; box-shadow:0 8px 30px rgba(220,38,38,.35); }
+  .result-hero { background:linear-gradient(135deg,#0f172a,#1e1b4b,#312e81); color:#fff; border-radius:1rem; padding:2rem; margin-bottom:1.5rem; }
+  .feedback-block { background:#f8fafc; border-radius:.75rem; padding:1.5rem; white-space:pre-wrap; font-size:.92rem; line-height:1.7; }
+  .solution-block { background:#0f172a; color:#e2e8f0; border-radius:.75rem; padding:1.5rem; font-family:'Consolas',monospace; white-space:pre-wrap; font-size:.88rem; line-height:1.7; }
+  .manual-override-badge { background:linear-gradient(135deg,#f59e0b,#d97706); color:#fff; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Result Hero -->
+<div class="result-hero text-center">
+  <p class="text-white-50 mb-2 small text-uppercase tracking-wide">Assignment Result</p>
+  <h1 class="h3 fw-bold mb-0">{{ assignment.title }}</h1>
+</div>
+
+<div class="row g-4">
+  <!-- Score Panel -->
+  <div class="col-lg-4 text-center">
+    <div class="page-card h-100 d-flex flex-column align-items-center justify-content-center gap-3 py-4">
+      {% with score=submission.final_score|floatformat:1 max=assignment.max_score %}
+      {% if submission.final_score >= 7 %}
+        <div class="score-circle score-high">
+          <span style="font-size:2rem;">{{ score }}</span>
+          <span style="font-size:.85rem;opacity:.8;">/ {{ max }}</span>
+        </div>
+        <span class="badge bg-success rounded-pill px-3 py-2"><i class="bi bi-trophy-fill me-1"></i>Excellent!</span>
+      {% elif submission.final_score >= 5 %}
+        <div class="score-circle score-mid">
+          <span style="font-size:2rem;">{{ score }}</span>
+          <span style="font-size:.85rem;opacity:.8;">/ {{ max }}</span>
+        </div>
+        <span class="badge bg-warning text-dark rounded-pill px-3 py-2"><i class="bi bi-emoji-smile me-1"></i>Good Work!</span>
+      {% else %}
+        <div class="score-circle score-low">
+          <span style="font-size:2rem;">{{ score }}</span>
+          <span style="font-size:.85rem;opacity:.8;">/ {{ max }}</span>
+        </div>
+        <span class="badge bg-danger rounded-pill px-3 py-2"><i class="bi bi-arrow-repeat me-1"></i>Keep Practicing</span>
+      {% endif %}
+      {% endwith %}
+
+      {% if submission.manual_score is not None %}
+      <div class="badge manual-override-badge rounded-pill px-3 py-2">
+        <i class="bi bi-person-badge-fill me-1"></i>Instructor Override
+      </div>
+      {% else %}
+      <p class="text-muted small mb-0"><i class="bi bi-robot me-1"></i>AI Auto-Graded</p>
+      {% endif %}
+
+      <div class="text-muted small mt-2">
+        <i class="bi bi-clock me-1"></i>Submitted {{ submission.submitted_at|date:"M d, Y H:i" }}<br>
+        {% if submission.graded_at %}
+        <i class="bi bi-check-all me-1"></i>Graded {{ submission.graded_at|date:"M d, Y H:i" }}
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Feedback Panel -->
+  <div class="col-lg-8">
+    <div class="page-card h-100">
+      <h5 class="fw-bold mb-3">
+        <i class="bi bi-chat-quote-fill me-2 text-primary"></i>
+        {% if submission.manual_score is not None %}Instructor Feedback{% else %}AI Feedback{% endif %}
+      </h5>
+
+      {% if submission.final_feedback %}
+        <div class="feedback-block">{{ submission.final_feedback }}</div>
+      {% else %}
+        <p class="text-muted"><em>No feedback available yet.</em></p>
+      {% endif %}
+
+      <!-- Your Answer -->
+      <h5 class="fw-bold mt-4 mb-3"><i class="bi bi-send-fill me-2 text-secondary"></i>Your Submission</h5>
+      {% if assignment.assignment_type == 'coding' %}
+        <div class="solution-block">{{ submission.code_submission }}</div>
+      {% else %}
+        <div class="feedback-block">{{ submission.answer_text }}</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="mt-4 d-flex gap-3">
+  <a href="{% url 'assignments:list' course_id=assignment.course.pk %}" class="btn btn-outline-primary">
+    <i class="bi bi-arrow-left me-1"></i>Back to Assignments
+  </a>
+  <a href="{% url 'assignments:student_dashboard' %}" class="btn btn-primary">
+    <i class="bi bi-bar-chart-fill me-1"></i>My Scores Dashboard
+  </a>
+</div>
+{% endblock %}
+

@@ -1,0 +1,46 @@
+/* CollegePortal – additional custom styles */
+
+/* Smooth transitions */
+a { transition: color .15s ease; }
+.btn { transition: all .2s ease; }
+
+/* Card hover effect on course cards */
+.page-card {
+  transition: box-shadow .2s ease;
+}
+.page-card:hover {
+  box-shadow: 0 4px 20px rgba(0,0,0,.08);
+}
+
+/* Table enhancements */
+.table th {
+  font-weight: 600;
+  font-size: .8rem;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: #6b7280;
+}
+
+/* Progress bars */
+.progress {
+  border-radius: 999px;
+  background: #e5e7eb;
+}
+
+/* Form controls */
+.form-control:focus,
+.form-select:focus {
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 .2rem rgba(79, 70, 229, .15);
+}
+
+/* Responsive sidebar backdrop */
+@media (max-width: 768px) {
+  #sidebar.show + #main::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.4);
+    z-index: 999;
+  }
+}

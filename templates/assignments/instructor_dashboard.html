@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Assignments &ndash; Instructor Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+  .inst-hero { background:linear-gradient(135deg,#1e1b4b,#312e81); border-radius:1rem; color:#fff; padding:2rem; margin-bottom:1.5rem; }
+  .assignment-row { border:1px solid #e5e7eb; border-radius:.75rem; padding:1.25rem; background:#fff; transition:.2s; }
+  .assignment-row:hover { box-shadow:0 6px 20px rgba(79,70,229,.1); border-color:#a5b4fc; }
+  .stat-mini { font-size:.75rem; color:#6b7280; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="inst-hero">
+  <div class="d-flex align-items-center justify-content-between">
+    <div>
+      <p class="opacity-50 small text-uppercase mb-1">Instructor</p>
+      <h1 class="h3 fw-bold mb-0">Assignment Management</h1>
+    </div>
+    <a href="{% url 'assignments:create' %}" class="btn btn-light fw-semibold">
+      <i class="fas fa-plus-circle me-2"></i>Create Assignment
+    </a>
+  </div>
+</div>
+
+{% if assignments %}
+<div class="d-flex flex-column gap-3">
+  {% for a in assignments %}
+  <div class="assignment-row">
+    <div class="row align-items-center g-3">
+      <div class="col-md-5">
+        <div class="d-flex align-items-center gap-2">
+          <span class="badge rounded-pill {% if a.assignment_type == 'coding' %}text-bg-primary{% else %}text-bg-success{% endif %}">
+            {{ a.get_assignment_type_display }}
+          </span>
+          <h6 class="fw-bold mb-0">{{ a.title }}</h6>
+        </div>
+        <small class="text-muted"><i class="fas fa-book me-1"></i>{{ a.lesson.title }}</small>
+      </div>
+      <div class="col-md-2 text-center">
+        <div class="fw-bold fs-5 text-primary">{{ a.submission_count }}</div>
+        <div class="stat-mini">Submissions</div>
+      </div>
+      <div class="col-md-2 text-center">
+        <div class="fw-bold fs-5 text-success">
+          {% if a.avg_score %}{{ a.avg_score|floatformat:1 }}{% else %}&mdash;{% endif %}
+        </div>
+        <div class="stat-mini">Avg Score / {{ a.max_score }}</div>
+      </div>
+      <div class="col-md-3 text-end">
+        <a href="{% url 'assignments:instructor_submissions' assignment_id=a.pk %}" class="btn btn-sm btn-outline-primary">
+          <i class="fas fa-users me-1"></i>View Submissions
+        </a>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+{% else %}
+<div class="text-center py-5">
+  <i class="fas fa-clipboard-list text-muted" style="font-size:3rem;"></i>
+  <h5 class="mt-3 text-muted">No assignments yet</h5>
+  <a href="{% url 'assignments:create' %}" class="btn btn-primary mt-2">Create Your First Assignment</a>
+</div>
+{% endif %}
+{% endblock %}
+

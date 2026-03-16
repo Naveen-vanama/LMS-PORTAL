@@ -1,0 +1,1007 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard &ndash; LMSPORTAL{% endblock %}
+
+{% block content %}
+<style>
+/* -- Dashboard premium enhancements --------------------------- */
+.stat-card {
+  transition: transform .22s cubic-bezier(.34,1.6,.64,1), box-shadow .22s ease;
+  cursor: default;
+}
+.stat-card:hover {
+  transform: translateY(-5px) scale(1.02);
+  box-shadow: 0 12px 32px rgba(0,0,0,.18) !important;
+}
+.page-card {
+  transition: box-shadow .2s ease;
+}
+.page-card:hover {
+  box-shadow: 0 6px 24px rgba(0,0,0,.09) !important;
+}
+.quick-action-btn {
+  display: flex; align-items: center; gap:.5rem;
+  padding: .6rem 1.1rem;
+  border-radius: .75rem;
+  font-size: .85rem; font-weight: 600;
+  transition: all .18s ease;
+  border: 2px solid transparent;
+  text-decoration: none;
+}
+.quick-action-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(0,0,0,.15);
+}
+.attendance-ring {
+  width: 80px; height: 80px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem; font-weight: 700;
+  background: conic-gradient(#4f46e5 calc(var(--pct,0) * 1%), #e5e7eb 0);
+  position: relative;
+}
+.attendance-ring-inner {
+  width: 60px; height: 60px; border-radius: 50%;
+  background: white;
+  display: flex; align-items: center; justify-content: center;
+  font-size: .8rem; font-weight: 700; color: #4f46e5;
+}
+.badge-status {
+  font-size: .72rem; padding: .3em .65em; border-radius: .4rem;
+}
+.section-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 1rem;
+}
+/* -- Streak Calendar ------------------------------------------ */
+.streak-day {
+  display: flex; flex-direction: column; align-items: center; gap: 0.25rem;
+  width: 45px;
+}
+.streak-circle {
+  width: 32px; height: 32px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1rem; background: #f3f4f6; color: #9ca3af;
+  border: 1px solid #e5e7eb; transition: all 0.3s ease;
+}
+.streak-circle.completed {
+  background: #fff; color: #f59e0b; border-color: #f59e0b;
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.2);
+}
+.streak-circle.today {
+  border-width: 2px; border-color: #4f46e5;
+}
+.badge-item {
+  display: flex; align-items: center; gap: 0.75rem;
+  padding: 0.75rem; border-radius: 0.75rem;
+  background: #fdf2f8; border: 1px solid #fbcfe8;
+  margin-bottom: 0.5rem;
+}
+</style>
+
+<!-- -- Page Header -------------------------------------------- -->
+<div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+  <div>
+    <h4 class="fw-bold mb-0">Welcome back, {{ user.get_full_name|default:user.username }} <i class="fas fa-hand-wave text-warning"></i></h4>
+    <p class="text-muted small mb-0">
+      {{ user.get_role_display }} Dashboard &nbsp;Â·&nbsp;
+      <span class="text-secondary">{{ today|date:"l, N j, Y" }}</span>
+    </p>
+  </div>
+  <div class="d-flex gap-2 flex-wrap">
+    <a href="{% url 'users:profile' %}" class="quick-action-btn bg-light text-dark">
+      <i class="fas fa-user-cog"></i> My Profile
+    </a>
+  </div>
+</div>
+
+
+{# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• ADMIN â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• #}
+{% if user.is_admin_role or user.is_superuser %}
+
+<!-- Stat row: 6 cards -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-sm-4 col-xl-2">
+    <a href="{% url 'users:list' %}" class="text-decoration-none">
+      <div class="stat-card" style="background:linear-gradient(135deg,#4f46e5,#7c3aed)">
+        <div class="fw-bold fs-4">{{ total_users }}</div>
+        <div class="small opacity-75">Total Users</div>
+        <i class="fas fa-users stat-icon"></i>
+      </div>
+    </a>
+  </div>
+  <div class="col-6 col-sm-4 col-xl-2">
+    <a href="{% url 'courses:list' %}" class="text-decoration-none">
+      <div class="stat-card" style="background:linear-gradient(135deg,#0891b2,#0e7490)">
+        <div class="fw-bold fs-4">{{ total_courses }}</div>
+        <div class="small opacity-75">Courses</div>
+        <i class="fas fa-book stat-icon"></i>
+      </div>
+    </a>
+  </div>
+  <div class="col-6 col-sm-4 col-xl-2">
+    <a href="{% url 'users:list' %}?role=student" class="text-decoration-none">
+      <div class="stat-card" style="background:linear-gradient(135deg,#059669,#047857)">
+        <div class="fw-bold fs-4">{{ total_students }}</div>
+        <div class="small opacity-75">Students</div>
+        <i class="fas fa-user-graduate stat-icon"></i>
+      </div>
+    </a>
+  </div>
+  <div class="col-6 col-sm-4 col-xl-2">
+    <a href="{% url 'users:list' %}?role=instructor" class="text-decoration-none">
+      <div class="stat-card" style="background:linear-gradient(135deg,#d97706,#b45309)">
+        <div class="fw-bold fs-4">{{ total_instructors }}</div>
+        <div class="small opacity-75">Instructors</div>
+        <i class="fas fa-chalkboard-teacher stat-icon"></i>
+      </div>
+    </a>
+  </div>
+  <div class="col-6 col-sm-4 col-xl-2">
+    <div class="stat-card" style="background:linear-gradient(135deg,#db2777,#be185d)">
+      <div class="fw-bold fs-4">{{ total_batches }}</div>
+      <div class="small opacity-75">Batches</div>
+      <i class="fas fa-layer-group stat-icon"></i>
+    </div>
+  </div>
+  <div class="col-6 col-sm-4 col-xl-2">
+    <a href="{% url 'payments:list' %}" class="text-decoration-none">
+      <div class="stat-card" style="background:linear-gradient(135deg,#16a34a,#15803d)">
+        <div class="fw-bold fs-4">&#8377;{{ total_payments_amount|default:"0" }}</div>
+        <div class="small opacity-75">Finance</div>
+        <i class="fas fa-indian-rupee-sign stat-icon"></i>
+      </div>
+    </a>
+  </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="page-card mb-4">
+  <h6 class="fw-semibold mb-3"><i class="bi bi-lightning-charge-fill text-warning me-2"></i>Quick Actions</h6>
+  <div class="d-flex flex-wrap gap-2">
+    <a href="{% url 'courses:create' %}" class="quick-action-btn" style="background:#ede9fe;color:#4f46e5;border-color:#c4b5fd;">
+      <i class="fas fa-plus-circle"></i> New Course
+    </a>
+    <a href="{% url 'users:register' %}" class="quick-action-btn" style="background:#dcfce7;color:#059669;border-color:#86efac;">
+      <i class="fas fa-user-plus"></i> Add User
+    </a>
+    <a href="{% url 'courses:list' %}" class="quick-action-btn" style="background:#e0f2fe;color:#0891b2;border-color:#7dd3fc;">
+      <i class="fas fa-th"></i> All Courses
+    </a>
+    <a href="{% url 'attendance:manage' %}" class="quick-action-btn" style="background:#fef3c7;color:#d97706;border-color:#fcd34d;">
+      <i class="fas fa-clipboard-check"></i> Attendance
+    </a>
+    <a href="{% url 'payments:list' %}" class="quick-action-btn" style="background:#f0fdf4;color:#16a34a;border-color:#bbf7d0;">
+      <i class="fas fa-credit-card"></i> Payments
+    </a>
+  </div>
+</div>
+
+{% if top_courses_labels_json %}
+<div class="row g-3 mb-4">
+  <div class="col-12">
+    <div class="page-card h-100">
+      <h6 class="fw-semibold mb-3">Top Enrolled Courses</h6>
+      <canvas id="adminCoursesChart" height="60"></canvas>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<div class="row g-3">
+  <div class="col-lg-4">
+    <div class="page-card h-100 border-start border-4 border-danger">
+      <div class="section-header">
+        <h6 class="fw-semibold mb-0 text-danger"><i class="fas fa-exclamation-triangle me-2"></i>Attendance Risk</h6>
+        <span class="badge bg-danger bg-opacity-10 text-danger">Below 75%</span>
+      </div>
+      <div class="mt-3 text-center">
+        <div style="height: 160px;">
+          <canvas id="attendanceRiskPieChart"></canvas>
+        </div>
+        <hr class="my-3 opacity-25">
+        {% for s in at_risk_students %}
+        <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom last-border-none">
+          <div class="d-flex align-items-center gap-2">
+             <div class="rounded-circle bg-danger bg-opacity-10 text-danger d-flex align-items-center justify-content-center fw-bold" style="width:32px; height:32px; font-size:0.75rem;">
+                {{ s.username|first|upper }}
+             </div>
+             <div>
+               <div class="small fw-bold">{{ s.get_full_name|default:s.username }}</div>
+               <div class="text-muted" style="font-size:0.7rem;">Sessions: {{ s.total_attn }}</div>
+             </div>
+          </div>
+          <div class="text-end">
+            <div class="fw-bold text-danger">{{ s.attn_rate|floatformat:1 }}%</div>
+            <div class="text-muted" style="font-size:0.65rem;">Attendance</div>
+          </div>
+        </div>
+        {% empty %}
+        <div class="text-center py-4">
+          <i class="bi bi-check-circle-fill text-success fs-2 opacity-25"></i>
+          <p class="text-muted small mt-2">All students are above the 75% threshold!</p>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-8">
+    <div class="page-card h-100">
+      <div class="section-header">
+        <h6 class="fw-semibold mb-0"><i class="bi bi-clock-history me-2 text-primary"></i>Recent Enrollments</h6>
+        <span class="badge bg-primary bg-opacity-10 text-primary">Last 10</span>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-sm table-hover align-middle mb-0">
+          <thead class="table-light"><tr>
+            <th>Student</th><th>Course</th><th>Batch</th><th>Date</th>
+          </tr></thead>
+          <tbody>
+            {% for e in recent_enrollments %}
+            <tr>
+              <td>
+                <div class="fw-semibold small">{{ e.student.get_full_name|default:e.student.username }}</div>
+              </td>
+              <td><a href="{% url 'courses:detail' e.batch.course.pk %}" class="text-decoration-none">{{ e.batch.course.code }}</a></td>
+              <td class="text-muted small">{{ e.batch.name }}</td>
+              <td class="text-muted small">{{ e.enrolled_at|date:"M d, Y" }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" class="text-muted text-center py-3">No enrollments yet</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-12 mt-3">
+    <div class="page-card h-100">
+      <div class="section-header">
+        <h6 class="fw-semibold mb-0"><i class="bi bi-journal-bookmark me-2 text-primary"></i>Recent Courses</h6>
+        <a href="{% url 'courses:create' %}" class="btn btn-sm" style="background:#4f46e5;color:#fff;">
+          <i class="bi bi-plus"></i> New
+        </a>
+      </div>
+      {% for c in courses %}
+      <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+        <div>
+          <div class="fw-semibold small">{{ c.title }}</div>
+          <div class="text-muted" style="font-size:.75rem;">{{ c.code }}</div>
+        </div>
+        <span class="badge bg-primary bg-opacity-10 text-primary">{{ c.enrollment_count }} students</span>
+      </div>
+      {% empty %}
+      <p class="text-muted small">No courses yet.</p>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+
+{# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• INSTRUCTOR â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• #}
+{% elif user.is_instructor %}
+
+<!-- Stat row: 4 cards -->
+<div class="row g-3 mb-4">
+  <div class="col-sm-6 col-xl-3">
+    <div class="stat-card" style="background:linear-gradient(135deg,#4f46e5,#7c3aed)">
+      <div class="fw-bold fs-4">{{ courses.count }}</div>
+      <div class="small opacity-75">My Courses</div>
+      <i class="bi bi-journal-bookmark-fill stat-icon"></i>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="stat-card" style="background:linear-gradient(135deg,#059669,#047857)">
+      <div class="fw-bold fs-4">{{ total_students }}</div>
+      <div class="small opacity-75">Active Students</div>
+      <i class="bi bi-mortarboard-fill stat-icon"></i>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="stat-card" style="background:linear-gradient(135deg,#0891b2,#0e7490)">
+      <div class="fw-bold fs-4">{{ total_batches }}</div>
+      <div class="small opacity-75">My Batches</div>
+      <i class="bi bi-layers-fill stat-icon"></i>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="stat-card" style="background:linear-gradient(135deg,#d97706,#b45309)">
+      <div class="fw-bold fs-4">{{ recent_enrollments|length }}</div>
+      <div class="small opacity-75">Recent Sign-ups</div>
+      <i class="bi bi-person-plus-fill stat-icon"></i>
+    </div>
+  </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="page-card mb-4">
+  <h6 class="fw-semibold mb-3"><i class="bi bi-lightning-charge-fill text-warning me-2"></i>Quick Actions</h6>
+  <div class="d-flex flex-wrap gap-2">
+    <a href="{% url 'courses:create' %}" class="quick-action-btn" style="background:#ede9fe;color:#4f46e5;border-color:#c4b5fd;">
+      <i class="bi bi-plus-circle"></i> New Course
+    </a>
+    <a href="{% url 'courses:list' %}" class="quick-action-btn" style="background:#e0f2fe;color:#0891b2;border-color:#7dd3fc;">
+      <i class="bi bi-grid-3x3-gap"></i> All Courses
+    </a>
+    <a href="{% url 'attendance:manage' %}" class="quick-action-btn" style="background:#fef3c7;color:#d97706;border-color:#fcd34d;">
+      <i class="bi bi-clipboard-check"></i> Attendance
+    </a>
+  </div>
+</div>
+
+{% if course_labels_json %}
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="page-card h-100">
+      <h6 class="fw-semibold mb-3">My Course Enrollments</h6>
+      <canvas id="instructorCoursesChart" height="80"></canvas>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<div class="row g-3">
+  <div class="col-lg-8">
+    <!-- My Courses Grid -->
+    <div class="page-card mb-3">
+      <h6 class="fw-semibold mb-3"><i class="bi bi-journal-bookmark me-2 text-primary"></i>My Courses</h6>
+      <div class="row g-3">
+        {% for c in courses %}
+        <div class="col-md-6">
+          <div class="border rounded-3 p-3 h-100" style="transition:border-color .2s,box-shadow .2s;" onmouseover="this.style.borderColor='#4f46e5';this.style.boxShadow='0 2px 10px rgba(79,70,229,.12)'" onmouseout="this.style.borderColor='';this.style.boxShadow=''">
+            <h6 class="fw-bold mb-1">{{ c.title }}</h6>
+            <div class="text-muted small mb-2">{{ c.code }}</div>
+            <p class="small text-secondary mb-2">{{ c.description|truncatewords:12 }}</p>
+            <div class="d-flex justify-content-between align-items-center">
+              <span class="badge bg-primary bg-opacity-10 text-primary">{{ c.enrollment_count }} enrolled</span>
+              <a href="{% url 'courses:detail' c.pk %}" class="btn btn-sm btn-outline-primary">View <i class="fas fa-arrow-right"></i></a>
+            </div>
+          </div>
+        </div>
+        {% empty %}
+        <p class="text-muted">No courses assigned yet.</p>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <!-- Attendance Risk -->
+    <div class="page-card mb-3 border-start border-4 border-danger">
+      <div class="section-header">
+        <h6 class="fw-semibold mb-0 text-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i>Attendance Risk</h6>
+        <span class="badge bg-danger bg-opacity-10 text-danger">Low Attendance</span>
+      </div>
+      <div class="mt-3 text-center">
+        <div style="height: 160px;">
+          <canvas id="attendanceRiskPieChart"></canvas>
+        </div>
+        <hr class="my-3 opacity-25">
+        {% for s in at_risk_students %}
+        <div class="d-flex align-items-center justify-content-between mb-2 pb-2 border-bottom">
+          <div>
+            <div class="small fw-bold text-dark">{{ s.get_full_name|default:s.username }}</div>
+            <div class="text-muted" style="font-size: 0.7rem;">Present: {{ s.present_attn }} / {{ s.total_attn }}</div>
+          </div>
+          <div class="text-end">
+            <span class="fw-bold text-danger">{{ s.attn_rate|floatformat:1 }}%</span>
+          </div>
+        </div>
+        {% empty %}
+        <p class="text-muted small text-center py-3">No at-risk students in your batches.</p>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Recent Enrollments in My Courses -->
+    <div class="page-card mb-3">
+      <h6 class="fw-semibold mb-3"><i class="bi bi-person-lines-fill me-2 text-primary"></i>Recent Sign-ups</h6>
+      {% for e in recent_enrollments %}
+      <div class="d-flex align-items-center gap-2 py-2 border-bottom">
+        <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+             style="width:32px;height:32px;background:#ede9fe;color:#4f46e5;font-size:.75rem;font-weight:700;">
+          {{ e.student.first_name|first|upper|default:e.student.username|first|upper }}
+        </div>
+        <div class="flex-grow-1 overflow-hidden">
+          <div class="fw-semibold small text-truncate">{{ e.student.get_full_name|default:e.student.username }}</div>
+          <div class="text-muted" style="font-size:.72rem;">{{ e.batch.course.code }} Â· {{ e.batch.name }}</div>
+        </div>
+        <span class="text-muted" style="font-size:.7rem;">{{ e.enrolled_at|date:"M d" }}</span>
+      </div>
+      {% empty %}
+      <p class="text-muted small">No recent enrollments.</p>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+
+{# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• STUDENT â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• #}
+{% else %}
+
+{% if not taken_quiz_today %}
+<div class="alert alert-warning d-flex align-items-center mb-4 border-0 shadow-sm" style="border-radius: 1rem; background: #fffbeb;">
+  <div class="rounded-circle bg-warning bg-opacity-20 d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
+    <i class="bi bi-lightning-fill text-warning"></i>
+  </div>
+  <div class="flex-grow-1">
+    <div class="fw-bold text-warning-emphasis">Don't break your streak!</div>
+    <div class="small text-muted">You haven't completed a quiz today. Take one now to maintain your {{ streak.current_streak|default:0 }} day streak.</div>
+  </div>
+  <a href="{% url 'courses:list' %}" class="btn btn-warning btn-sm fw-bold px-3" style="border-radius: 0.75rem;">Take Quiz</a>
+</div>
+{% endif %}
+
+{% if upcoming_live_sessions %}
+<!-- Upcoming Live Classes <i class="fas fa-video text-danger"></i> -->
+<div class="card border-0 shadow-sm mb-4" style="border-radius: 1.25rem; overflow: hidden; background: linear-gradient(135deg, #1e293b, #0f172a); color: white;">
+  <div class="card-body p-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h5 class="fw-bold mb-0"><i class="fas fa-broadcast-tower me-2 text-danger animate-pulse"></i>Upcoming Live Classes</h5>
+      <a href="{% url 'courses:list' %}" class="text-white text-decoration-none small opacity-75">View All</a>
+    </div>
+    <div class="row g-3">
+      {% for session in upcoming_live_sessions %}
+      <div class="col-md-6 col-lg-4">
+        <div class="bg-white bg-opacity-10 rounded-4 p-3 border border-white border-opacity-10 h-100 d-flex flex-column">
+          <div class="d-flex justify-content-between mb-2">
+            <span class="badge bg-danger rounded-pill px-2 py-1" style="font-size: 0.65rem;">LIVE SOON</span>
+            <span class="small opacity-75">{{ session.scheduled_time|time:"H:i A" }}</span>
+          </div>
+          <h6 class="fw-bold mb-1 text-truncate">{{ session.title }}</h6>
+          <p class="small opacity-75 mb-3 flex-grow-1">{{ session.course.title }}</p>
+          <a href="{% url 'live_classes:join' session.id %}" class="btn btn-danger btn-sm w-100 fw-bold py-2" style="border-radius: 0.75rem;">Join Now</a>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<style>
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.4; }
+  100% { opacity: 1; }
+}
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+</style>
+{% endif %}
+
+<!-- Daily Quiz Streak <i class="fas fa-fire text-warning animate-fire"></i> -->
+<div class="row g-3 mb-4">
+  <div class="col-lg-8">
+    <div class="page-card h-100 border-start border-4 border-warning shadow-sm">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="fw-bold mb-0">Daily Quiz Challenge <i class="fas fa-fire text-warning animate-fire ms-1"></i></h5>
+        {% if taken_quiz_today %}
+          <span class="badge bg-success bg-opacity-10 text-success small">Goal Met Today</span>
+        {% else %}
+          <span class="badge bg-warning bg-opacity-10 text-dark small">Complete a quiz today!</span>
+        {% endif %}
+      </div>
+      
+      <div class="row align-items-center">
+        <div class="col-md-5 border-end pe-4">
+          <div class="d-flex align-items-baseline gap-2 mb-1">
+            <span class="fs-1 fw-bold text-dark">{{ streak.current_streak|default:0 }}</span>
+            <span class="text-muted">days</span>
+          </div>
+          <p class="text-muted small mb-3">Your current streak is active. Keep going to earn badges!</p>
+          <div class="d-flex align-items-center justify-content-between small text-secondary">
+             <span>Longest Streak:</span>
+             <span class="fw-bold">{{ streak.longest_streak|default:0 }} days</span>
+          </div>
+        </div>
+        
+        <div class="col-md-7 ps-4">
+          <div class="d-flex justify-content-between mb-2">
+            {% for day in streak_calendar %}
+            <div class="streak-day">
+              <span class="text-muted" style="font-size: 0.65rem;">{{ day.day_name }}</span>
+              <div class="streak-circle {% if day.completed %}completed{% endif %} {% if day.is_today %}today{% endif %}" title="{{ day.date|date:'M d' }}">
+                {% if day.completed %}
+                  <i class="fas fa-fire"></i>
+                {% else %}
+                  <i class="fas fa-times" style="font-size: 0.7rem;"></i>
+                {% endif %}
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          <div class="mt-3">
+             <a href="{% url 'courses:list' %}" class="btn btn-sm w-100" style="background:#f59e0b; color:white; font-weight:600;">
+               Take a Quiz Now
+             </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-lg-4">
+    <div class="page-card h-100 overflow-auto" style="max-height: 240px;">
+      <h6 class="fw-bold mb-3"><i class="fas fa-award me-2 text-primary"></i>Your Badges</h6>
+      {% for badge in badges %}
+      <div class="badge-item">
+        <div class="rounded-circle bg-white d-flex align-items-center justify-content-center border shadow-sm" style="width:40px;height:40px;">
+           {% if 'Gold' in badge.badge_name %}
+             <i class="fas fa-trophy text-warning"></i>
+           {% elif 'Silver' in badge.badge_name %}
+             <i class="fas fa-trophy text-secondary"></i>
+           {% else %}
+             <i class="fas fa-trophy" style="color:#b45309"></i>
+           {% endif %}
+        </div>
+        <div>
+          <div class="fw-bold small">{{ badge.badge_name }}</div>
+          <div class="text-muted" style="font-size: 0.65rem;">{{ badge.earned_date|date:"M d, Y" }}</div>
+        </div>
+      </div>
+      {% empty %}
+      <div class="text-center py-4 text-muted">
+         <i class="fas fa-award fs-2 mb-2 opacity-25"></i>
+         <p class="small">No badges earned yet.<br>Maintain a streak to earn them!</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- Stat row: 4 cards -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-sm-3">
+    <div class="stat-card" style="background:linear-gradient(135deg,#4f46e5,#7c3aed)">
+      <div class="fw-bold fs-4">{{ total_courses }}</div>
+      <div class="small opacity-75">Total Enrolled</div>
+      <i class="fas fa-book stat-icon"></i>
+    </div>
+  </div>
+  <div class="col-6 col-sm-3">
+    <div class="stat-card" style="background:linear-gradient(135deg,#059669,#047857)">
+      <div class="fw-bold fs-4">{{ active_courses_count }}</div>
+      <div class="small opacity-75">Active</div>
+      <i class="fas fa-play-circle stat-icon"></i>
+    </div>
+  </div>
+  <div class="col-6 col-sm-3">
+    <div class="stat-card" style="background:linear-gradient(135deg,#0891b2,#0e7490)">
+      <div class="fw-bold fs-4">{{ completed_courses_count }}</div>
+      <div class="small opacity-75">Completed</div>
+      <i class="fas fa-check-circle stat-icon"></i>
+    </div>
+  </div>
+  <div class="col-6 col-sm-3">
+    <div class="stat-card" style="background: linear-gradient(135deg, {% if attendance_percentage >= 70 %}#d97706, #b45309{% else %}#dc2626, #b91c1c{% endif %});">
+      <div class="fw-bold fs-4">
+        {% if attendance_percentage %}{{ attendance_percentage }}%{% else %}&mdash;{% endif %}
+      </div>
+      <div class="small opacity-75">Attendance</div>
+      <i class="fas fa-chart-bar stat-icon"></i>
+    </div>
+  </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="page-card mb-4">
+  <h6 class="fw-semibold mb-3"><i class="fas fa-bolt text-warning me-2"></i>Quick Actions</h6>
+  <div class="d-flex flex-wrap gap-2">
+    <a href="{% url 'courses:list' %}" class="quick-action-btn" style="background:#ede9fe;color:#4f46e5;border-color:#c4b5fd;">
+      <i class="fas fa-search"></i> Browse Courses
+    </a>
+    <a href="{% url 'attendance:summary' %}" class="quick-action-btn" style="background:#fef3c7;color:#d97706;border-color:#fcd34d;">
+      <i class="fas fa-clipboard-check"></i> My Attendance
+    </a>
+  </div>
+</div>
+
+{% if progress_labels_json or risk_pie_data_json %}
+<div class="row g-3 mb-4 align-items-stretch">
+
+  {% if progress_labels_json %}
+  <div class="col-lg-8 d-flex">
+    <div class="page-card w-100 d-flex flex-column">
+      <h6 class="fw-semibold mb-3">
+        <i class="fas fa-chart-bar me-2 text-primary"></i>My Course Progress
+      </h6>
+      <div class="flex-grow-1" style="min-height: 220px; position: relative;">
+        <canvas id="studentProgressChart" style="max-height: 220px;"></canvas>
+      </div>
+      <!-- Progress legend below chart -->
+      <div class="row g-2 mt-3 pt-2 border-top">
+        {% for e in enrollments %}
+        <div class="col-sm-6">
+          <div class="d-flex align-items-center gap-2">
+            <div class="flex-grow-1">
+              <div class="d-flex justify-content-between small fw-semibold mb-1">
+                <span class="text-truncate" style="max-width: 160px;" title="{{ e.batch.course.title }}">{{ e.batch.course.code }}</span>
+                <span class="{% if e.progress >= 75 %}text-success{% elif e.progress >= 50 %}text-warning{% else %}text-danger{% endif %}">{{ e.progress }}%</span>
+              </div>
+              <div class="progress" style="height: 5px; border-radius: 4px;">
+                <div class="progress-bar {% if e.progress >= 75 %}bg-success{% elif e.progress >= 50 %}bg-warning{% else %}bg-danger{% endif %}"
+                     style="width: {{ e.progress }}%;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if risk_pie_data_json %}
+  <div class="col-lg-4 d-flex">
+    <div class="page-card w-100 d-flex flex-column">
+      <h6 class="fw-semibold mb-3 text-start">
+        <i class="fas fa-chart-pie me-2 text-danger"></i>Attendance Risk
+      </h6>
+      <!-- Pie chart &mdash; fixed height to match bar chart -->
+      <div class="text-center" style="min-height: 180px; position: relative;">
+        <canvas id="attendanceRiskPieChart" style="max-height: 180px;"></canvas>
+      </div>
+      <!-- Legend / summary below pie -->
+      <div class="mt-3 pt-2 border-top d-flex flex-column gap-2">
+        <div class="d-flex align-items-center justify-content-between small">
+          <span class="d-flex align-items-center gap-2">
+            <span class="rounded-circle d-inline-block" style="width:10px;height:10px;background:#10b981;"></span>
+            On Track
+          </span>
+          <span class="fw-bold text-success">{{ risk_on_track_count|default:"&mdash;" }}</span>
+        </div>
+        <div class="d-flex align-items-center justify-content-between small">
+          <span class="d-flex align-items-center gap-2">
+            <span class="rounded-circle d-inline-block" style="width:10px;height:10px;background:#ef4444;"></span>
+            At Risk (&lt;75%)
+          </span>
+          <span class="fw-bold text-danger">{{ risk_at_risk_count|default:"&mdash;" }}</span>
+        </div>
+        {% if attendance_percentage %}
+        <div class="mt-2 p-2 rounded-3" style="background:#fef9c3;">
+          <div class="small fw-bold text-dark mb-1">Your Attendance</div>
+          <div class="progress" style="height: 6px;">
+            <div class="progress-bar {% if attendance_percentage >= 75 %}bg-success{% else %}bg-danger{% endif %}"
+                 style="width: {{ attendance_percentage }}%;"></div>
+          </div>
+          <div class="small mt-1 {% if attendance_percentage >= 75 %}text-success{% else %}text-danger{% endif %} fw-semibold">
+            {{ attendance_percentage }}%
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+{% endif %}
+
+
+<!-- Attendance warning -->
+{% if attendance_percentage and attendance_percentage < 70 %}
+<div class="alert d-flex align-items-center gap-3 mb-4" style="background:#fef2f2;border:1px solid #fecaca;border-radius:.75rem;">
+  <i class="fas fa-exclamation-triangle text-danger fs-5"></i>
+  <div>
+    <strong>Attendance Warning</strong> &mdash; Your attendance is below 70% ({{ attendance_percentage }}%).
+    Please contact your instructor or advisor.
+  </div>
+</div>
+{% endif %}
+
+<!-- Latest Announcements -->
+<div class="page-card mb-4 border-start border-4 border-warning shadow-sm">
+  <div class="d-flex justify-content-between align-items-center mb-0">
+    <h6 class="fw-bold mb-0"><i class="fas fa-bullhorn text-warning me-2"></i>Latest Announcements</h6>
+    <span class="badge bg-warning bg-opacity-10 text-dark small">{{ announcements|length }} new</span>
+  </div>
+  <hr class="my-2 opacity-10">
+  <div class="row g-3 mt-1">
+    {% for a in announcements %}
+    <div class="col-md-6">
+      <div class="p-2 rounded-2 hover-bg" style="cursor:default;">
+        <div class="d-flex justify-content-between align-items-start">
+          <div class="fw-bold small">{{ a.title }}</div>
+          <span class="text-muted" style="font-size: .7rem;">{{ a.created_at|date:"M d" }}</span>
+        </div>
+        <div class="text-muted" style="font-size: .75rem; line-height: 1.2;">{{ a.content|truncatewords:15 }}</div>
+        <div class="mt-1" style="font-size: .65rem; color: #4f46e5;">{{ a.course.code }} Â· {{ a.author.get_full_name|default:a.author.username }}</div>
+      </div>
+    </div>
+    {% empty %}
+    <div class="col-12 text-muted small px-3 py-2">No recent announcements.</div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Enrollments Table -->
+<div class="page-card">
+  <div class="section-header">
+    <h6 class="fw-bold mb-0"><i class="fas fa-user-check me-2 text-primary"></i>My Enrollments</h6>
+    <a href="{% url 'courses:list' %}" class="btn btn-sm" style="background:#4f46e5;color:#fff;">Browse Courses</a>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light"><tr>
+        <th>Course</th><th>Batch</th><th>Instructor</th><th>Status</th><th>Progress</th><th>Grade / Certificate</th>
+      </tr></thead>
+      <tbody>
+        {% for e in enrollments %}
+        <tr>
+          <td>
+            <a href="{% url 'courses:detail' e.batch.course.pk %}" class="fw-semibold text-decoration-none">
+              {{ e.batch.course.title }}
+            </a>
+            <div class="text-muted small">{{ e.batch.course.code }}</div>
+          </td>
+          <td class="small">{{ e.batch.name }}</td>
+          <td class="small">{{ e.batch.course.instructor.get_full_name|default:e.batch.course.instructor.username|default:"&mdash;" }}</td>
+          <td>
+            <span class="badge badge-status
+              {% if e.status == 'active' %}bg-success
+              {% elif e.status == 'completed' %}bg-primary
+              {% elif e.status == 'dropped' %}bg-danger
+              {% else %}bg-warning text-dark{% endif %}">
+              {{ e.get_status_display }}
+            </span>
+          </td>
+          <td>
+            <div class="d-flex align-items-center gap-2" style="min-width: 120px;">
+              <div class="progress flex-grow-1" style="height: 6px;">
+                <div class="progress-bar bg-success" style="width: {{ e.progress }}%;"></div>
+              </div>
+              <span class="small fw-semibold text-muted">{{ e.progress }}%</span>
+            </div>
+          </td>
+          <td class="fw-semibold">
+            {% if e.certificate.id %}
+            <div class="d-flex gap-1">
+              <a href="{% url 'certificates:download_certificate' e.certificate.certificate_id %}" class="btn btn-sm btn-outline-success py-0 px-2" style="font-size: .75rem;" title="Download Certificate">
+                <i class="fas fa-download"></i> Certificate
+              </a>
+            </div>
+            {% elif e.progress >= 75 %}
+            <a href="{% url 'certificates:issue_certificate' e.pk %}" class="btn btn-sm btn-primary py-0 px-2" style="font-size: .75rem;">
+              <i class="fas fa-certificate"></i> Generate
+            </a>
+            {% else %}
+            <span class="text-muted small" style="font-size: .7rem;" title="Complete 75% to unlock">
+              <i class="fas fa-lock"></i> Locked
+            </span>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" class="text-muted text-center py-5">
+          <i class="fas fa-inbox fs-3 d-block mb-2 opacity-50"></i>
+          You're not enrolled in any courses yet.
+          <a href="{% url 'courses:list' %}">Browse courses <i class="fas fa-arrow-right"></i></a>
+        </td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="row mt-4">
+  <div class="col-12">
+    <div class="page-card">
+      <div class="d-flex align-items-center justify-content-between mb-4">
+        <h5 class="fw-bold mb-0 text-dark">
+          <i class="fas fa-award text-warning me-2"></i>My Certificates
+        </h5>
+        <span class="badge bg-primary bg-opacity-10 text-primary fw-semibold px-3 py-2">
+          {% for e in enrollments %}{% if e.certificate.id %}{% with count=forloop.counter %}{% endwith %}{% endif %}{% endfor %}
+          Earned
+        </span>
+      </div>
+
+      {% for e in enrollments %}
+      {% if e.certificate.id %}
+      <!-- Certificate Card -->
+      <div class="border rounded-4 p-4 mb-3 position-relative overflow-hidden" style="background: linear-gradient(135deg, #f8f7ff 0%, #eef2ff 100%); border-color: #c7d2fe !important;">
+        <!-- Accent strip -->
+        <div class="position-absolute top-0 start-0 h-100 rounded-start" style="width:5px; background: linear-gradient(180deg, #4f46e5, #c8a84b);"></div>
+
+        <div class="row align-items-center ps-2">
+          <!-- Badge icon -->
+          <div class="col-auto d-none d-md-block">
+            <div class="rounded-circle d-flex align-items-center justify-content-center" style="width:56px;height:56px;background:linear-gradient(135deg,#4f46e5,#7c3aed);">
+              <i class="fas fa-certificate text-white fs-4"></i>
+            </div>
+          </div>
+
+          <!-- Course info -->
+          <div class="col">
+            <div class="fw-bold text-dark fs-6">{{ e.batch.course.title }}</div>
+            <div class="text-muted small mb-1">
+              <span class="badge bg-light text-secondary border me-2">{{ e.batch.course.code }}</span>
+              <i class="fas fa-calendar-alt me-1"></i>{{ e.certificate.issued_date|date:"M d, Y" }}
+            </div>
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+              <span class="badge bg-success bg-opacity-15 text-success fw-semibold">
+                <i class="fas fa-check-circle me-1"></i>{{ e.certificate.completion_percentage|floatformat:0 }}% Complete
+              </span>
+              <code class="small text-muted">{{ e.certificate.certificate_id }}</code>
+            </div>
+          </div>
+
+          <!-- Action buttons -->
+          <div class="col-auto d-flex flex-column flex-md-row gap-2 align-items-end align-items-md-center">
+            <!-- Download PDF -->
+            <a href="{% url 'certificates:download_certificate' e.certificate.certificate_id %}"
+               class="btn btn-sm btn-primary px-3 shadow-sm"
+               title="Download certificate as PDF">
+              <i class="fas fa-file-pdf me-1"></i>Download PDF
+            </a>
+
+            <!-- Verify publicly -->
+            <a href="{% url 'certificates:verify_certificate' e.certificate.id %}"
+               target="_blank"
+               class="btn btn-sm btn-outline-success px-3"
+               title="Open public verification page">
+              <i class="fas fa-shield-alt me-1"></i>Verify
+            </a>
+
+            <!-- Copy verification link -->
+            <button class="btn btn-sm btn-outline-secondary px-3 copy-link-btn"
+                    data-url="{% url 'certificates:verify_certificate' e.certificate.id %}"
+                    title="Copy verification link">
+              <i class="fas fa-link me-1"></i>Copy Link
+            </button>
+
+            <!-- Share dropdown -->
+            <div class="dropdown">
+              <button class="btn btn-sm btn-outline-secondary dropdown-toggle px-3"
+                      type="button"
+                      data-bs-toggle="dropdown"
+                      aria-expanded="false"
+                      title="Share certificate">
+                <i class="fas fa-share-alt me-1"></i>Share
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
+                <li>
+                  <a class="dropdown-item small"
+                     href="https://www.linkedin.com/shareArticle?mini=true&url={{ request.scheme }}://{{ request.get_host }}{% url 'certificates:verify_certificate' e.certificate.id %}&title=I+earned+a+certificate+for+{{ e.batch.course.title|urlencode }}"
+                     target="_blank" rel="noopener">
+                    <i class="fab fa-linkedin text-primary me-2"></i>Share on LinkedIn
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item small"
+                     href="https://wa.me/?text=I+earned+a+certificate+for+{{ e.batch.course.title|urlencode }}!+Verify+at+{{ request.scheme }}://{{ request.get_host }}{% url 'certificates:verify_certificate' e.certificate.id %}"
+                     target="_blank" rel="noopener">
+                    <i class="fab fa-whatsapp text-success me-2"></i>Share on WhatsApp
+                  </a>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+      {% empty %}
+      {% endfor %}
+
+      {% with has_cert=False %}
+      {% for e in enrollments %}{% if e.certificate.id %}{% with has_cert=True %}{% endwith %}{% endif %}{% endfor %}
+      {% endwith %}
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    {% if user.is_admin_role or user.is_superuser %}
+      // Admin charts
+      if (document.getElementById('adminCoursesChart')) {
+        new Chart(document.getElementById('adminCoursesChart').getContext('2d'), {
+          type: 'bar',
+          data: {
+            labels: {{ top_courses_labels_json|safe|default:"[]" }},
+            datasets: [{
+              label: 'Students Enrolled',
+              data: {{ top_courses_data_json|safe|default:"[]" }},
+              backgroundColor: ['#4f46e5', '#10b981', '#f59e0b', '#ef4444', '#0ea5e9', '#d946ef', '#f97316', '#14b8a6', '#8b5cf6', '#06b6d4'],
+              borderRadius: 4
+            }]
+          },
+          options: { responsive: true, plugins: { legend: { display: false } } }
+        });
+      }
+    {% elif user.is_instructor %}
+      // Instructor charts
+      if (document.getElementById('instructorCoursesChart')) {
+        new Chart(document.getElementById('instructorCoursesChart').getContext('2d'), {
+          type: 'bar',
+          data: {
+            labels: {{ course_labels_json|safe|default:"[]" }},
+            datasets: [{
+              label: 'Students Enrolled',
+              data: {{ course_data_json|safe|default:"[]" }},
+              backgroundColor: ['#059669', '#2563eb', '#d97706', '#dc2626', '#7c3aed', '#db2777', '#ca8a04', '#0891b2', '#4f46e5', '#ea580c'],
+              borderRadius: 4
+            }]
+          },
+          options: { responsive: true, plugins: { legend: { display: false } } }
+        });
+      }
+    {% else %}
+      // Student chart
+      if (document.getElementById('studentProgressChart')) {
+        new Chart(document.getElementById('studentProgressChart').getContext('2d'), {
+          type: 'bar',
+          data: {
+            labels: {{ progress_labels_json|safe|default:"[]" }},
+            datasets: [{
+              label: 'Progress (%)',
+              data: {{ progress_data_json|safe|default:"[]" }},
+              backgroundColor: ['#0891b2', '#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#f97316', '#14b8a6', '#84cc16'],
+              borderRadius: 4
+            }]
+          },
+          options: {
+            responsive: true,
+            scales: { y: { beginAtZero: true, max: 100 } },
+            plugins: { legend: { display: false } } 
+          }
+        });
+      }
+    {% endif %}
+
+    // Shared Attendance Risk Chart (for all roles)
+    var riskCanvas = document.getElementById('attendanceRiskPieChart');
+    if (riskCanvas) {
+      var riskData = {{ risk_pie_data_json|safe|default:"[0, 0]" }};
+      var hasData = riskData.some(v => v > 0);
+      
+      if (!hasData) {
+        riskCanvas.parentElement.innerHTML = '<div class="py-4 text-muted small"><i class="fas fa-chart-bar opacity-25 d-block fs-2 mb-2"></i>No attendance data yet</div>';
+      } else {
+        new Chart(riskCanvas.getContext('2d'), {
+          type: 'doughnut',
+          data: {
+            labels: {{ risk_pie_labels_json|safe|default:"['On Track', 'At Risk']" }},
+            datasets: [{
+              data: riskData,
+              backgroundColor: ['#10b981', '#ef4444'],
+              hoverOffset: 4
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } }
+            }
+          }
+        });
+      }
+    }
+  });
+
+  // -- Copy Verification Link --
+  document.querySelectorAll('.copy-link-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var path = btn.getAttribute('data-url');
+      var fullUrl = window.location.origin + path;
+      navigator.clipboard.writeText(fullUrl).then(function() {
+        var original = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-check me-1"></i>Copied!';
+        btn.classList.remove('btn-outline-secondary');
+        btn.classList.add('btn-success');
+        setTimeout(function() {
+          btn.innerHTML = original;
+          btn.classList.remove('btn-success');
+          btn.classList.add('btn-outline-secondary');
+        }, 2000);
+      });
+    });
+  });
+</script>
+{% endblock %}
+

@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% block title %}Results: {{ quiz.title }}{% endblock %}
+
+{% block content %}
+<div class="mb-4 d-flex justify-content-between align-items-center">
+  <div>
+    <a href="{% url 'quizzes:list' quiz.course.id %}" class="text-muted small text-decoration-none">
+      <i class="fas fa-arrow-left me-1"></i>Back to Quizzes
+    </a>
+    <h4 class="fw-bold mt-2">Quiz Results</h4>
+    <p class="text-muted small mb-0">{{ quiz.title }}</p>
+  </div>
+</div>
+
+<div class="row g-4 justify-content-center">
+  <!-- Score Card -->
+  <div class="col-lg-12">
+    <div class="page-card text-center py-5 rounded-4 border-0 shadow-lg" style="background: linear-gradient(to right, #ecfdf5, #f0fdfa);">
+      <h6 class="text-secondary fw-bold text-uppercase fs-6 tracking-wide mb-3">Your Score</h6>
+      <h1 class="display-3 fw-bolder {% if percentage >= 80 %}text-success{% elif percentage >= 50 %}text-warning{% else %}text-danger{% endif %} mb-0">
+        {{ percentage }}<span class="fs-2">%</span>
+      </h1>
+      <p class="fs-5 mt-2 fw-medium text-muted">
+        {{ score }} out of {{ total }} correct
+      </p>
+      
+      <!-- Recommended Study Notice based on score -->
+      {% if percentage < 100 %}
+      <div class="alert alert-info d-inline-block text-start mt-4 shadow-sm border-0 bg-white">
+        <i class="fas fa-robot text-purple me-2 fs-5"></i> 
+        <strong>AI Recommendation:</strong> 
+        Review the explanations below linked to the course material to improve your understanding!
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Detailed Answers -->
+  <div class="col-lg-10 mt-5">
+    <h5 class="fw-bold mb-4 border-bottom pb-2">Detailed Feedback</h5>
+    
+    {% for ans in answers %}
+    <div class="card mb-4 border-0 shadow-sm border-start border-5 {% if ans.is_correct %}border-success{% else %}border-danger{% endif %}">
+      <div class="card-body p-4">
+        
+        <div class="d-flex justify-content-between align-items-start mb-3">
+          <h6 class="fw-bold fs-5 mb-0" style="max-width: 85%;">
+            {{ forloop.counter }}. {{ ans.question.question_text }}
+          </h6>
+          {% if ans.is_correct %}
+            <span class="badge bg-success py-2 px-3 fw-bold fs-6"><i class="fas fa-check-circle me-1"></i> Correct</span>
+          {% else %}
+            <span class="badge bg-danger py-2 px-3 fw-bold fs-6"><i class="fas fa-times-circle me-1"></i> Incorrect</span>
+          {% endif %}
+        </div>
+        
+        <div class="bg-light p-3 rounded mb-3">
+          <span class="text-muted d-block small fw-bold mb-1">Your Answer:</span>
+          <span class="{% if ans.is_correct %}text-success fw-bold{% else %}text-danger text-decoration-line-through text-opacity-75{% endif %}">
+            {{ ans.selected_answer }}
+          </span>
+        </div>
+        
+        {% if not ans.is_correct %}
+        <div class="bg-success bg-opacity-10 p-3 rounded mb-3 border border-success border-opacity-25">
+          <span class="text-success d-block small fw-bold mb-1"><i class="fas fa-check-double"></i> Correct Answer:</span>
+          <span class="text-dark fw-bold">{{ ans.question.correct_answer }}</span>
+        </div>
+        {% endif %}
+        
+        <div class="mt-3 text-muted small">
+          <i class="fas fa-lightbulb text-warning me-1"></i> <strong>Explanation:</strong> 
+          {{ ans.question.explanation|default:"No explanation provided for this question." }}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+    
+    <div class="text-center mt-5 mb-5">
+      <a href="{% url 'courses:detail' quiz.course.id %}" class="btn btn-primary fw-bold px-4">
+        Return to Course
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+

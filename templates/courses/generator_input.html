@@ -1,0 +1,58 @@
+﻿{% extends 'base.html' %}
+
+{% block title %}AI Course Generator - {{ course.code }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="page-card shadow-sm">
+                <div class="d-flex align-items-center mb-4">
+                    <a href="{% url 'courses:detail' course.id %}" class="btn btn-outline-secondary btn-sm me-3">
+                        <i class="bi bi-arrow-left"></i>
+                    </a>
+                    <h3 class="mb-0">
+                        <i class="bi bi-robot text-primary me-2"></i>AI Course Content Generator
+                    </h3>
+                </div>
+
+                <div class="alert alert-info border-0 bg-primary bg-opacity-10 text-primary">
+                    <i class="bi bi-info-circle-fill me-2"></i>
+                    Generate structured lessons automatically using Gemini 2.0 Flash. Provide a topic or upload a PDF.
+                </div>
+
+                <form method="post" enctype="multipart/form-data" class="mt-4">
+                    {% csrf_token %}
+                    
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Option 1: Topic Text Input</label>
+                        {{ form.topic }}
+                        <div class="form-text">Describe the main topic (e.g., "Introduction to React Hooks").</div>
+                    </div>
+
+                    <div class="text-center my-3 text-muted">- OR -</div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Option 2: Upload PDF Document</label>
+                        {{ form.pdf_file }}
+                        <div class="form-text">Upload a textbook chapter or research paper to generate a lesson from it.</div>
+                    </div>
+
+                    {% if form.errors %}
+                        <div class="alert alert-danger">
+                            {{ form.non_field_errors }}
+                        </div>
+                    {% endif %}
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary py-2 fw-bold">
+                            <i class="bi bi-stars me-2"></i>Generate Content
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

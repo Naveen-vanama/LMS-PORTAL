@@ -1,0 +1,102 @@
+﻿{% extends 'base.html' %}
+{% block title %}My Attendance &ndash; LMSPORTAL{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-4">
+  <h4 class="fw-bold mb-0"><i class="bi bi-bar-chart-line-fill me-2 text-primary"></i>My Attendance</h4>
+</div>
+
+{% if course_labels_json %}
+<div class="row mb-4">
+  <div class="col-12 col-md-6 offset-md-3">
+    <div class="page-card text-center">
+      <h6 class="fw-bold mb-3">Courses Attendance Distribution</h6>
+      <canvas id="coursePieChart" height="200"></canvas>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<div class="row g-4">
+  {% for item in summary %}
+  <div class="col-md-6 col-lg-4">
+    <div class="page-card h-100 border-top border-4 {% if item.rate >= 75 %}border-success{% else %}border-danger{% endif %} shadow-sm">
+      <div class="row g-2 align-items-start mb-3">
+        <div class="col-7">
+          <h6 class="fw-bold mb-0 text-dark text-truncate" title="{{ item.enrollment.batch.course.title }}">{{ item.enrollment.batch.course.title }}</h6>
+          <span class="badge bg-light text-dark border small mt-1">{{ item.enrollment.batch.course.code }}</span>
+        </div>
+        <div class="col-5 text-end">
+          <div class="fw-bold fs-4 {% if item.rate >= 75 %}text-success{% else %}text-danger{% endif %}" style="line-height: 1;">
+            {{ item.rate }}%
+          </div>
+          <div class="text-muted" style="font-size: 0.7rem;">Attendance</div>
+        </div>
+      </div>
+
+      <div class="progress mb-3" style="height: 8px; border-radius: 4px; background-color: #f1f5f9;">
+        <div class="progress-bar {% if item.rate >= 75 %}bg-success{% else %}bg-danger{% endif %}" 
+             role="progressbar" style="width: {{ item.rate }}%;" 
+             aria-valuenow="{{ item.rate }}" aria-valuemin="0" aria-valuemax="100"></div>
+      </div>
+
+      <div class="d-flex justify-content-between text-muted small mb-3">
+        <span><i class="bi bi-check-circle me-1"></i>Present: <strong>{{ item.present }}</strong></span>
+        <span><i class="bi bi-calendar-event me-1"></i>Total: <strong>{{ item.total }}</strong></span>
+      </div>
+
+      <a href="{% url 'attendance:report' item.enrollment.batch.pk %}" class="btn btn-sm btn-outline-primary w-100 rounded-pill">
+        View Detailed Report
+      </a>
+    </div>
+  </div>
+  {% empty %}
+  <div class="col-12">
+    <div class="page-card text-center py-5">
+      <i class="bi bi-calendar-x fs-1 opacity-20 d-block mb-3"></i>
+      <h5 class="text-muted">No attendance data found</h5>
+      <p class="text-secondary small">You are not currently enrolled in any active course batches.</p>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    {% if course_labels_json %}
+      const labels = {{ course_labels_json|safe }};
+      const data = {{ course_rates_json|safe }};
+      
+      const backgroundColors = [
+        '#4f46e5', '#10b981', '#f59e0b', '#ef4444', '#0ea5e9', '#8b5cf6', '#ec4899', '#14b8a6',
+        '#f43f5e', '#84cc16', '#06b6d4', '#d946ef', '#f97316', '#8b5cf6', '#10b981', '#6366f1',
+        '#1d4ed8', '#1e3a8a', '#1e40af', '#3b82f6', '#60a5fa', '#93c5fd', '#bfdbfe', '#dbeafe'
+      ];
+
+      const ctxPie = document.getElementById('coursePieChart').getContext('2d');
+      new Chart(ctxPie, {
+        type: 'pie',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Attendance Rate (%)',
+            data: data,
+            backgroundColor: backgroundColors.slice(0, labels.length),
+            hoverOffset: 4
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { position: 'bottom' }
+          }
+        }
+      });
+    {% endif %}
+  });
+</script>
+{% endblock %}
+

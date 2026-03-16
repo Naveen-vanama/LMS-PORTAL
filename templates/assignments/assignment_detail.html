@@ -1,0 +1,162 @@
+﻿{% extends "base.html" %}
+{% block title %}{{ assignment.title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+  .assignment-hero {
+    background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4c1d95 100%);
+    border-radius: 1rem;
+    color: #fff;
+    padding: 2rem;
+    margin-bottom: 1.5rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .assignment-hero::after {
+    content: '\F287';
+    font-family: "bootstrap-icons";
+    position: absolute;
+    right: 2rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 6rem;
+    opacity: .07;
+  }
+  .code-editor {
+    font-family: 'Cascadia Code', 'Consolas', 'Fira Code', monospace !important;
+    font-size: .9rem !important;
+    background: #0f172a !important;
+    color: #e2e8f0 !important;
+    border: 1px solid #334155 !important;
+    border-radius: .5rem !important;
+    line-height: 1.6;
+  }
+  .description-box {
+    background: #f8fafc;
+    border-left: 4px solid #4f46e5;
+    border-radius: 0 .5rem .5rem 0;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  .submit-btn {
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    border: none;
+    padding: .75rem 2rem;
+    font-weight: 600;
+    border-radius: .75rem;
+    transition: all .2s ease;
+  }
+  .submit-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(79,70,229,.4); }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Banner -->
+<div class="assignment-hero">
+  <div class="d-flex align-items-center gap-2 mb-2">
+    <span class="badge bg-white bg-opacity-25 text-white rounded-pill px-3 py-2">
+      <i class="bi bi-{% if assignment.assignment_type == 'coding' %}code-slash{% else %}file-text{% endif %} me-1"></i>
+      {{ assignment.get_assignment_type_display }} Assignment
+    </span>
+    <span class="badge bg-warning text-dark rounded-pill px-3 py-2">
+      <i class="bi bi-star-fill me-1"></i>{{ assignment.max_score }} pts
+    </span>
+  </div>
+  <h1 class="h2 fw-bold mb-1">{{ assignment.title }}</h1>
+  <p class="mb-0 opacity-75">
+    <i class="bi bi-book me-1"></i>{{ assignment.course.title }} &nbsp;Â·&nbsp;
+    <i class="bi bi-journal me-1"></i>{{ assignment.lesson.title }}
+  </p>
+</div>
+
+<div class="row g-4">
+  <!-- Left: Description + Form -->
+  <div class="col-lg-7">
+    <div class="page-card">
+      <h5 class="fw-bold mb-3"><i class="bi bi-list-task me-2 text-primary"></i>Assignment Description</h5>
+      <div class="description-box">
+        {{ assignment.description|linebreaks }}
+      </div>
+
+      {% if existing_submission %}
+        <div class="alert alert-success d-flex align-items-center gap-3">
+          <i class="bi bi-check-circle-fill fs-4"></i>
+          <div>
+            <strong>Already Submitted!</strong><br>
+            <span class="small">You've already submitted this assignment.</span>
+          </div>
+          <a href="{% url 'assignments:result' pk=assignment.pk %}" class="ms-auto btn btn-sm btn-success">
+            View Result <i class="bi bi-arrow-right"></i>
+          </a>
+        </div>
+      {% else %}
+        <h5 class="fw-bold mb-3 mt-4">
+          <i class="bi bi-pencil-fill me-2 text-primary"></i>
+          Your Submission
+        </h5>
+        <form method="post" action="{% url 'assignments:submit' pk=assignment.pk %}">
+          {% csrf_token %}
+          {% for field in form %}
+            {% if field.is_hidden %}
+              {{ field }}
+            {% else %}
+              <div class="mb-3">
+                <label class="form-label fw-semibold">{{ field.label }}</label>
+                {{ field }}
+                {% if field.errors %}
+                  <div class="text-danger small mt-1">{{ field.errors.0 }}</div>
+                {% endif %}
+              </div>
+            {% endif %}
+          {% endfor %}
+          <button type="submit" class="btn btn-primary submit-btn text-white w-100">
+            <i class="bi bi-send-fill me-2"></i>Submit & Get AI Grade
+          </button>
+        </form>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Right: Tips -->
+  <div class="col-lg-5">
+    <div class="page-card mb-4" style="background:linear-gradient(135deg,#ede9fe,#f5f3ff);">
+      <h6 class="fw-bold mb-3 text-purple"><i class="bi bi-robot me-2"></i>AI Grading Criteria</h6>
+      {% if assignment.assignment_type == 'coding' %}
+      <ul class="list-unstyled mb-0">
+        <li class="mb-2"><i class="bi bi-check2-circle text-success me-2"></i><strong>Correctness</strong> &mdash; Does it work?</li>
+        <li class="mb-2"><i class="bi bi-check2-circle text-success me-2"></i><strong>Efficiency</strong> &mdash; Optimal approach?</li>
+        <li class="mb-2"><i class="bi bi-check2-circle text-success me-2"></i><strong>Readability</strong> &mdash; Clean code?</li>
+        <li class="mb-0"><i class="bi bi-check2-circle text-success me-2"></i><strong>Best Practices</strong> &mdash; Edge cases?</li>
+      </ul>
+      {% else %}
+      <ul class="list-unstyled mb-0">
+        <li class="mb-2"><i class="bi bi-check2-circle text-success me-2"></i><strong>Correctness</strong> &mdash; Factually accurate?</li>
+        <li class="mb-2"><i class="bi bi-check2-circle text-success me-2"></i><strong>Completeness</strong> &mdash; All points covered?</li>
+        <li class="mb-2"><i class="bi bi-check2-circle text-success me-2"></i><strong>Clarity</strong> &mdash; Well articulated?</li>
+        <li class="mb-0"><i class="bi bi-check2-circle text-success me-2"></i><strong>Depth</strong> &mdash; Shows understanding?</li>
+      </ul>
+      {% endif %}
+    </div>
+
+    <div class="page-card" style="background:linear-gradient(135deg,#fef9c3,#fefce8);">
+      <h6 class="fw-bold mb-3 text-warning-emphasis"><i class="bi bi-lightbulb-fill me-2 text-warning"></i>Tips</h6>
+      {% if assignment.assignment_type == 'coding' %}
+      <ul class="list-unstyled small mb-0 text-secondary">
+        <li class="mb-2">&bull; Test your code before submitting</li>
+        <li class="mb-2">&bull; Add comments explaining your logic</li>
+        <li class="mb-2">&bull; Handle edge cases (empty inputs, etc.)</li>
+        <li class="mb-0">&bull; Use meaningful variable names</li>
+      </ul>
+      {% else %}
+      <ul class="list-unstyled small mb-0 text-secondary">
+        <li class="mb-2">&bull; Write in clear, structured paragraphs</li>
+        <li class="mb-2">&bull; Back your answers with examples</li>
+        <li class="mb-2">&bull; Address all parts of the question</li>
+        <li class="mb-0">&bull; Proofread before submitting</li>
+      </ul>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+

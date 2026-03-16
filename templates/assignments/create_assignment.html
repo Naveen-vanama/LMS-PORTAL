@@ -1,0 +1,32 @@
+﻿{% extends "base.html" %}
+{% block title %}Create Assignment{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="page-card">
+      <h1 class="h4 fw-bold mb-4">
+        <i class="bi bi-plus-circle-fill me-2 text-primary"></i>Create New Assignment
+      </h1>
+      <form method="post">
+        {% csrf_token %}
+        {% for field in form %}
+        <div class="mb-3">
+          <label class="form-label fw-semibold">{{ field.label }}</label>
+          {{ field }}
+          {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+          {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors.0 }}</div>{% endif %}
+        </div>
+        {% endfor %}
+        <div class="d-flex gap-3 mt-4">
+          <button type="submit" class="btn btn-primary px-4">
+            <i class="bi bi-save-fill me-2"></i>Create Assignment
+          </button>
+          <a href="{% url 'assignments:instructor_dashboard' %}" class="btn btn-outline-secondary">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,46 @@
+﻿{% extends 'base.html' %}
+{% block title %}View Logs &ndash; {{ resource.title }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-8">
+    <div class="d-flex align-items-center mb-4">
+      <a href="{% url 'resources:list' resource.course_id %}" class="btn btn-link text-muted p-0 me-3">
+        <i class="bi bi-arrow-left fs-4"></i>
+      </a>
+      <div>
+        <h4 class="fw-bold mb-0">Viewer Logs</h4>
+        <div class="text-muted small">{{ resource.title }}</div>
+      </div>
+    </div>
+
+    <div class="page-card shadow-sm">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Student</th>
+              <th>Username</th>
+              <th>Viewed At</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for log in views_log %}
+            <tr>
+              <td class="fw-semibold">{{ log.student.get_full_name|default:log.student.username }}</td>
+              <td class="text-muted small">{{ log.student.username }}</td>
+              <td class="text-muted">{{ log.viewed_at|date:"M d, Y Â· H:i" }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="3" class="text-center py-4 text-muted">No one has viewed this resource yet.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+

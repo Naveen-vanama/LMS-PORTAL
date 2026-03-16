@@ -1,0 +1,64 @@
+﻿{% extends 'base.html' %}
+
+{% block title %}Preview AI Content - {{ course.code }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="page-card shadow-sm">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h3 class="mb-0">
+                        <i class="bi bi-eye text-success me-2"></i>Review & Edit AI Content
+                    </h3>
+                    <span class="badge bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill">
+                        AI Generated
+                    </span>
+                </div>
+
+                <div class="alert alert-warning border-0 bg-warning bg-opacity-10 text-dark mb-4">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    Please review and edit the generated content below. Publishing will also automatically generate a 5-question quiz for this lesson.
+                </div>
+
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Lesson Title</label>
+                        {{ form.title }}
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Lesson Content (Markdown Supported)</label>
+                        {{ form.content }}
+                        <div class="form-text mt-2 text-muted">
+                            <i class="bi bi-markdown me-1"></i> Use Markdown for formatting (headers, lists, code blocks).
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-3 mt-5">
+                        <a href="{% url 'courses:course_generator' course.id %}" class="btn btn-light px-4">
+                            <i class="bi bi-arrow-left me-2"></i>Back / Regenerate
+                        </a>
+                        <button type="submit" class="btn btn-success flex-grow-1 py-2 fw-bold">
+                            <i class="bi bi-check-circle me-2"></i>Approve and Publish Lesson
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_css %}
+<style>
+    textarea.form-control {
+        font-family: 'Fira Code', 'Courier New', Courier, monospace;
+        font-size: 0.95rem;
+        background-color: #fcfcfc;
+    }
+</style>
+{% endblock %}
+{% endblock %}
+

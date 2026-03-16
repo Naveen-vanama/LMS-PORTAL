@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% block title %}Courses &ndash; LMSPORTAL{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h4 class="fw-bold mb-0"><i class="fas fa-book me-2"></i>Courses</h4>
+  {% if user.is_admin_role or user.is_superuser %}
+  <a href="{% url 'courses:create' %}" class="btn" style="background:#4f46e5;color:#fff;">
+    <i class="fas fa-plus me-1"></i> New Course
+  </a>
+  {% endif %}
+</div>
+
+<!-- Search bar -->
+<form method="get" class="mb-4">
+  <div class="input-group" style="max-width:420px;">
+    <input type="text" name="q" value="{{ query }}" class="form-control" placeholder="Search courses&hellip;">
+    <button class="btn btn-outline-secondary" type="submit"><i class="fas fa-search"></i></button>
+  </div>
+</form>
+
+<div class="row g-3">
+  {% for course in courses %}
+  <div class="col-md-6 col-xl-4">
+    <div class="page-card h-100 d-flex flex-column">
+      {% if course.thumbnail %}
+        <img src="{{ course.thumbnail.url }}" class="rounded-3 mb-3 w-100" style="height:140px;object-fit:cover;">
+      {% else %}
+        <div class="rounded-3 mb-3 d-flex align-items-center justify-content-center"
+             style="height:140px;background:linear-gradient(135deg,#ede9fe,#ddd6fe);">
+          <i class="fas fa-book text-primary" style="font-size:3rem;"></i>
+        </div>
+      {% endif %}
+      <div class="flex-grow-1">
+        <div class="d-flex justify-content-between align-items-start">
+          <span class="badge bg-light text-dark border small">{{ course.code }}</span>
+          <span class="badge {% if course.status == 'active' %}bg-success{% else %}bg-secondary{% endif %}">
+            {{ course.get_status_display }}
+          </span>
+        </div>
+        <h6 class="fw-bold mt-2 mb-1">{{ course.title }}</h6>
+        <p class="text-muted small">{{ course.description|truncatewords:20 }}</p>
+        <div class="text-muted small">
+          <i class="fas fa-user-tie me-1"></i>
+          {{ course.instructor.get_full_name|default:course.instructor.username|default:"Unassigned" }}
+        </div>
+      </div>
+      <div class="d-flex gap-2 mt-3 pt-2 border-top">
+        <a href="{% url 'courses:detail' course.pk %}" class="btn btn-sm btn-outline-primary flex-grow-1">
+          View Details
+        </a>
+        {% if user.is_admin_role or user.is_superuser %}
+        <a href="{% url 'courses:edit' course.pk %}" class="btn btn-sm btn-outline-secondary">
+          <i class="fas fa-pencil-alt"></i>
+        </a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% empty %}
+  <div class="col-12 text-center py-5 text-muted">
+    <i class="fas fa-book-dead" style="font-size:3rem;"></i>
+    <p class="mt-2">No courses found.</p>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}
+

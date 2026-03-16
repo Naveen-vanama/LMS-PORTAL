@@ -1,0 +1,54 @@
+﻿{% extends 'base.html' %}
+{% block title %}Attendance &ndash; {{ batch }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <a href="{% url 'courses:detail' batch.course.pk %}" class="text-muted small text-decoration-none">
+      <i class="bi bi-arrow-left me-1"></i>{{ batch.course.title }}
+    </a>
+    <h4 class="fw-bold mb-0 mt-1"><i class="bi bi-calendar-check me-2"></i>Attendance &ndash; {{ batch.name }}</h4>
+  </div>
+  {% if user == batch.course.instructor or user.is_admin_role or user.is_superuser %}
+  <a href="{% url 'attendance:take' batch.pk %}" class="btn" style="background:#4f46e5;color:#fff;">
+    <i class="bi bi-plus me-1"></i> Take Attendance
+  </a>
+  {% endif %}
+</div>
+
+<div class="page-card">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light"><tr>
+        <th>Date</th><th>Topic</th><th>Attendance Rate</th><th>Actions</th>
+      </tr></thead>
+      <tbody>
+        {% for session in sessions %}
+        <tr>
+          <td class="fw-semibold">{{ session.date|date:"M d, Y" }}</td>
+          <td>{{ session.topic|default:"&mdash;" }}</td>
+          <td>
+            <div class="d-flex align-items-center gap-2">
+              <div class="progress flex-grow-1" style="height:8px;max-width:120px;">
+                <div class="progress-bar {% if session.rate_val >= 75 %}bg-success{% elif session.rate_val >= 50 %}bg-warning{% else %}bg-danger{% endif %}"
+                     style="width:{{ session.rate_val }}%"></div>
+              </div>
+              <span class="small fw-semibold">{{ session.rate_val }}%</span>
+            </div>
+          </td>
+          <td>
+            <a href="{% url 'attendance:report' batch.pk %}?session={{ session.pk }}"
+               class="btn btn-sm btn-outline-secondary">
+              <i class="bi bi-eye"></i> View
+            </a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4" class="text-center text-muted py-4">No attendance sessions recorded yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+

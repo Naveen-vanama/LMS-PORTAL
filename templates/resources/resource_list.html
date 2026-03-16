@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% block title %}Resources &ndash; {{ course.title }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <a href="{% url 'courses:detail' course.pk %}" class="text-muted small text-decoration-none">
+      <i class="fas fa-arrow-left me-1"></i>{{ course.title }}
+    </a>
+    <h4 class="fw-bold mb-0 mt-1"><i class="fas fa-folder-open me-2"></i>Resources</h4>
+  </div>
+  {% if user == course.instructor or user.is_admin_role or user.is_superuser %}
+  <a href="{% url 'resources:upload' course.pk %}" class="btn" style="background:#4f46e5;color:#fff;">
+    <i class="fas fa-upload me-1"></i> Upload
+  </a>
+  {% endif %}
+</div>
+
+<div class="row g-3">
+  {% for resource in resources %}
+  <div class="col-md-6 col-xl-4">
+    <div class="page-card h-100">
+      <div class="d-flex align-items-start gap-3">
+        <div class="rounded-2 p-2 bg-primary bg-opacity-10">
+          {% if resource.resource_type == 'lecture' %}<i class="fas fa-file-powerpoint text-primary fs-4"></i>
+          {% elif resource.resource_type == 'assignment' %}<i class="fas fa-file-contract text-warning fs-4"></i>
+          {% elif resource.resource_type == 'reading' %}<i class="fas fa-book text-success fs-4"></i>
+          {% elif resource.resource_type == 'video' %}<i class="fas fa-play-circle text-danger fs-4"></i>
+          {% else %}<i class="fas fa-file text-secondary fs-4"></i>{% endif %}
+        </div>
+        <div class="flex-grow-1 min-w-0">
+          <div class="fw-semibold">{{ resource.title }}</div>
+          <div class="text-muted small">{{ resource.get_resource_type_display }}</div>
+          {% if resource.batch %}
+            <div class="text-muted" style="font-size:.75rem;">Batch: {{ resource.batch.name }}</div>
+          {% else %}
+            <div class="text-muted" style="font-size:.75rem;">All batches</div>
+          {% endif %}
+          <div class="text-muted" style="font-size:.72rem;">{{ resource.created_at|date:"M d, Y" }}</div>
+        </div>
+      </div>
+      {% if resource.description %}
+      <p class="text-muted small mt-2 mb-2">{{ resource.description|truncatewords:15 }}</p>
+      {% endif %}
+      <div class="d-flex gap-2 mt-2 align-items-center">
+        {% if resource.resource_type == 'video' %}
+        <a href="{% url 'resources:play' resource.pk %}" class="btn btn-sm btn-primary">
+          <i class="fas fa-play me-1"></i> Watch
+        </a>
+        {% elif resource.download_url %}
+        <a href="{% url 'resources:view_track' resource.pk %}" class="btn btn-sm btn-outline-primary" target="_blank">
+          <i class="fas fa-external-link-alt me-1"></i> Open / Download
+        </a>
+        {% endif %}
+        
+        {% if resource.pk in viewed_ids %}
+        <span class="ms-auto text-success" title="Viewed">
+          <i class="fas fa-check-circle"></i>
+        </span>
+        {% endif %}
+
+        {% if user == resource.uploaded_by or user.is_admin_role or user.is_superuser %}
+        <div class="ms-auto d-flex gap-1" style="margin-left:auto !important;">
+          <a href="{% url 'resources:views_log' resource.pk %}" class="btn btn-sm btn-outline-info" title="View Stats">
+            <i class="fas fa-eye"></i>
+          </a>
+          <a href="{% url 'resources:edit' resource.pk %}" class="btn btn-sm btn-outline-secondary" title="Edit">
+            <i class="fas fa-pencil-alt"></i>
+          </a>
+          <a href="{% url 'resources:delete' resource.pk %}" class="btn btn-sm btn-outline-danger"
+             onclick="return confirm('Delete this resource?')">
+            <i class="fas fa-trash"></i>
+          </a>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% empty %}
+  <div class="col-12 text-center py-5 text-muted">
+    <i class="fas fa-folder fs-1"></i>
+    <p class="mt-2">No resources uploaded yet.</p>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}
+

@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% block title %}My Assignments{% endblock %}
+
+{% block extra_css %}
+<style>
+  .dash-hero {
+    background: linear-gradient(135deg, #065f46, #059669);
+    border-radius: 1rem; color: #fff; padding: 2rem; margin-bottom: 1.5rem;
+  }
+  .score-pill {
+    font-size: .75rem; font-weight: 700; padding: .3rem .75rem;
+    border-radius: 999px; display: inline-block;
+  }
+  .score-high { background:#d1fae5; color:#065f46; }
+  .score-mid  { background:#fef3c7; color:#92400e; }
+  .score-low  { background:#fee2e2; color:#991b1b; }
+  .row-hover:hover { background: #f8faff !important; }
+  .stat-box {
+    border-radius:.75rem; padding:1.25rem 1.5rem;
+    text-align:center; color:#fff;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dash-hero">
+  <div class="d-flex align-items-center gap-3">
+    <div style="background:rgba(255,255,255,.15);border-radius:.75rem;padding:.75rem 1rem;">
+      <i class="fas fa-clipboard-check fs-3"></i>
+    </div>
+    <div>
+      <h1 class="h3 fw-bold mb-1">My Assignments</h1>
+      <p class="mb-0 opacity-75">Track your submissions, scores, and AI feedback</p>
+    </div>
+  </div>
+</div>
+
+<!-- Stats -->
+{% if submissions %}
+{% with total=submissions.count %}
+<div class="row g-3 mb-4">
+  <div class="col-sm-4">
+    <div class="stat-box" style="background:linear-gradient(135deg,#4f46e5,#7c3aed);">
+      <div style="font-size:2rem;font-weight:800;">{{ total }}</div>
+      <div class="opacity-75 small">Submissions</div>
+    </div>
+  </div>
+  <div class="col-sm-4">
+    <div class="stat-box" style="background:linear-gradient(135deg,#0891b2,#0e7490);">
+      <div style="font-size:2rem;font-weight:800;">
+        {% load math_extras %}
+        {% average_score submissions %}
+      </div>
+      <div class="opacity-75 small">Avg Score</div>
+    </div>
+  </div>
+  <div class="col-sm-4">
+    <div class="stat-box" style="background:linear-gradient(135deg,#d97706,#b45309);">
+      <div style="font-size:2rem;font-weight:800;">
+        {% best_score submissions %}
+      </div>
+      <div class="opacity-75 small">Best Score</div>
+    </div>
+  </div>
+</div>
+{% endwith %}
+
+<div class="page-card">
+  <div class="table-responsive">
+    <table class="table align-middle mb-0">
+      <thead style="background:#f8fafc;">
+        <tr>
+          <th class="border-0 py-3">Assignment</th>
+          <th class="border-0 py-3">Course</th>
+          <th class="border-0 py-3">Score</th>
+          <th class="border-0 py-3">Status</th>
+          <th class="border-0 py-3">Submitted</th>
+          <th class="border-0 py-3"></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for sub in submissions %}
+        <tr class="row-hover" style="transition:.15s;">
+          <td>
+            <div class="fw-semibold">{{ sub.assignment.title }}</div>
+            <span class="badge rounded-pill {% if sub.assignment.assignment_type == 'coding' %}text-bg-primary{% else %}text-bg-success{% endif %} small">
+              {{ sub.assignment.get_assignment_type_display }}
+            </span>
+          </td>
+          <td class="text-muted small">{{ sub.assignment.course.title }}</td>
+          <td>
+            {% if sub.final_score is not None %}
+              {% with s=sub.final_score|floatformat:1 m=sub.assignment.max_score %}
+              <span class="score-pill {% if sub.final_score >= 7 %}score-high{% elif sub.final_score >= 5 %}score-mid{% else %}score-low{% endif %}">
+                {{ s }} / {{ m }}
+              </span>
+              {% endwith %}
+            {% else %}
+              <span class="text-muted small">Pending</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if sub.manual_score is not None %}
+              <span class="badge text-bg-warning"><i class="fas fa-user-tag me-1"></i>Manual</span>
+            {% elif sub.ai_score is not None %}
+              <span class="badge text-bg-info"><i class="fas fa-robot me-1"></i>AI Graded</span>
+            {% else %}
+              <span class="badge text-bg-secondary">Awaiting</span>
+            {% endif %}
+          </td>
+          <td class="text-muted small">{{ sub.submitted_at|date:"M d, Y" }}</td>
+          <td>
+            <a href="{% url 'assignments:result' pk=sub.assignment.pk %}" class="btn btn-sm btn-outline-primary">
+              <i class="fas fa-eye me-1"></i>View
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% else %}
+<div class="text-center py-5">
+  <i class="fas fa-clipboard-list text-muted" style="font-size:3.5rem;"></i>
+  <h4 class="mt-3 text-muted">No submissions yet</h4>
+  <p class="text-secondary">Find your courses and start submitting assignments!</p>
+  <a href="{% url 'courses:list' %}" class="btn btn-primary">Browse Courses</a>
+</div>
+{% endif %}
+{% endblock %}
+

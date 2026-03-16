@@ -1,0 +1,52 @@
+﻿{% extends 'base.html' %}
+{% block title %}Post Announcement &ndash; {{ course.title }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-8">
+    <div class="d-flex align-items-center mb-4">
+      <a href="{% url 'courses:detail' course.pk %}" class="btn btn-link text-muted p-0 me-3">
+        <i class="bi bi-arrow-left fs-4"></i>
+      </a>
+      <h4 class="fw-bold mb-0">Post Announcement</h4>
+    </div>
+
+    <div class="page-card shadow-sm">
+        <div class="p-2 mb-3 bg-light rounded-2 small text-muted">
+            <i class="bi bi-info-circle me-1"></i>
+            This announcement will be visible to students in the <strong>{{ course.title }}</strong> course dashboard.
+        </div>
+
+      <form method="post" novalidate>
+        {% csrf_token %}
+        
+        <div class="mb-3">
+            <label class="form-label fw-semibold small">Title</label>
+            {{ form.title }}
+            {% if form.title.errors %}<div class="text-danger small mt-1">{{ form.title.errors.0 }}</div>{% endif %}
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label fw-semibold small">Content</label>
+            {{ form.content }}
+            {% if form.content.errors %}<div class="text-danger small mt-1">{{ form.content.errors.0 }}</div>{% endif %}
+        </div>
+
+        <div class="mb-4">
+            <label class="form-label fw-semibold small">Target Batch</label>
+            {{ form.batch }}
+            <div class="form-text mt-1">Select "All Batches" to notify everyone in the course.</div>
+            {% if form.batch.errors %}<div class="text-danger small mt-1">{{ form.batch.errors.0 }}</div>{% endif %}
+        </div>
+
+        <div class="d-grid">
+          <button type="submit" class="btn btn-primary py-2 fw-semibold">
+            <i class="bi bi-megaphone-fill me-2"></i>Post Announcement
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
