@@ -9,6 +9,7 @@ from django.shortcuts import redirect
 urlpatterns = [
     path('', lambda request: redirect('users:dashboard'), name='home'),
     path('admin/', admin.site.urls),
+    path('', include('users.urls')),
     path('users/', include('users.urls', namespace='users')),
     path('courses/', include('courses.urls', namespace='courses')),
     path('enrollments/', include('enrollments.urls', namespace='enrollments')),
