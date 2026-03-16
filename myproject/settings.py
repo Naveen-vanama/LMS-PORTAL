@@ -51,6 +51,7 @@ CACHES = {
 }
 
 MIDDLEWARE = [
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -140,3 +141,4 @@ RAZOR_KEY_SECRET = '15v3FoNY7KZpcoQgaWgO0u1f'
 
 # Gemini API Key for AI Assistant
 GOOGLE_API_KEY = 'AIzaSyD66ExPUmpGy8z8K8V7RuXFq87Zx2Jvjr8'
+
