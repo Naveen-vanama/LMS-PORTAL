@@ -174,8 +174,31 @@ def quiz_results(request, quiz_id):
         })
         
     else:
-        messages.info(request, "Instructors can view results in the admin panel or future results view.")
-        return redirect('quizzes:list', course_id=quiz.course.id)
+        # Get all students who completed this quiz
+        from django.db.models import Count, Avg, Case, When, FloatField
+        
+        student_results = StudentAnswer.objects.filter(question__quiz=quiz).values(
+            'student__id', 
+            'student__username', 
+            'student__first_name', 
+            'student__last_name'
+        ).annotate(
+            total_questions=Count('id'),
+            correct_answers=Count('id', filter=Q(is_correct=True)),
+            score=Avg(
+                Case(
+                    When(is_correct=True, then=100.0),
+                    default=0.0,
+                    output_field=FloatField()
+                )
+            )
+        ).order_by('-correct_answers')
+
+        return render(request, 'quizzes/instructor_quiz_results.html', {
+            'quiz': quiz,
+            'student_results': student_results,
+            'total_questions': quiz.questions.count()
+        })
 
 @login_required
 def start_daily_quiz(request, course_id):

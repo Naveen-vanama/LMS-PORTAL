@@ -55,11 +55,18 @@
             </a>
             {% endif %}
         {% else %}
-            <div class="d-flex gap-2">
-                <button class="btn btn-sm btn-light w-100" disabled>Instructor View</button>
+            <div class="d-flex flex-column gap-2">
+                <div class="d-flex gap-2">
+                    <a href="{% url 'quizzes:take' info.quiz.id %}" class="btn btn-sm btn-outline-primary flex-grow-1">
+                        <i class="fas fa-eye me-1"></i> Preview
+                    </a>
+                    <a href="{% url 'quizzes:results' info.quiz.id %}" class="btn btn-sm btn-outline-info flex-grow-1">
+                        <i class="fas fa-chart-pie me-1"></i> Results
+                    </a>
+                </div>
                 {% if info.quiz.is_revision %}
-                 <a href="{% url 'quizzes:edit_revision' info.quiz.id %}" class="btn btn-sm btn-outline-secondary">
-                    <i class="bi bi-pencil"></i>
+                 <a href="{% url 'quizzes:edit_revision' info.quiz.id %}" class="btn btn-sm btn-outline-secondary w-100">
+                    <i class="fas fa-pencil-alt me-1"></i> Edit Revision
                  </a>
                 {% endif %}
             </div>
