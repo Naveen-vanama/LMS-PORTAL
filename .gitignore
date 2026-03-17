@@ -6,13 +6,3 @@ __pycache__/
 
 # Environment
 .env
-
-# VS Code
-.vscode/
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Videos
-*.mp4

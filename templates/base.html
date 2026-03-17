@@ -72,7 +72,6 @@
       flex-direction: column;
       z-index: 1050;
       transition: width var(--transition);
-      overflow: hidden;
       box-shadow: 4px 0 24px rgba(0, 0, 0, .25);
     }
 
@@ -172,7 +171,6 @@
     .sidebar-nav {
       flex: 1;
       overflow-y: auto;
-      overflow-x: hidden;
       padding: .75rem 0;
     }
 
@@ -222,6 +220,15 @@
     /* hover icon glow */
     .sidebar-link:hover .sidebar-icon {
       color: #fff;
+    }
+
+    /* logout link hover */
+    .sidebar-link.logout-link:hover {
+      background: rgba(239, 68, 68, 0.15);
+      color: #ef4444;
+    }
+    .sidebar-link.logout-link:hover .sidebar-icon {
+      color: #ef4444 !important;
     }
 
     /* active */
@@ -809,15 +816,16 @@
             <span class="sidebar-label">Profile</span>
           </a>
         </li>
-        <li class="sidebar-item">
-          <a href="{% url 'users:logout' %}" class="sidebar-link" data-tooltip="Logout">
-            <i class="fas fa-sign-out-alt sidebar-icon"></i>
-            <span class="sidebar-label">Logout</span>
-          </a>
-        </li>
-
       </ul>
     </div><!-- /sidebar-nav -->
+
+    <!-- Sticky Logout Button -->
+    <div class="sidebar-item px-2 pb-2" style="margin-top: auto;">
+      <a href="{% url 'users:logout' %}" class="sidebar-link logout-link text-danger" data-tooltip="Logout">
+        <i class="fas fa-sign-out-alt sidebar-icon text-danger"></i>
+        <span class="sidebar-label fw-bold">Logout</span>
+      </a>
+    </div>
 
     <!-- Collapse toggle (desktop only) -->
     <div class="sidebar-footer">
