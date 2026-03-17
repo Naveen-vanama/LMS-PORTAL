@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from courses.models import Batch
 
 
@@ -12,6 +13,7 @@ class Enrollment(models.Model):
         COMPLETED = 'completed', 'Completed'
         WAITLISTED = 'waitlisted', 'Waitlisted'
         PENDING_PAYMENT = 'pending_payment', 'Pending Payment'
+        PENDING_APPROVAL = 'pending_approval', 'Pending Approval'
 
     student = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -27,6 +29,25 @@ class Enrollment(models.Model):
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.ACTIVE)
     enrolled_at = models.DateTimeField(auto_now_add=True)
     grade = models.CharField(max_length=5, blank=True)   # e.g. A, B+, 85
+    
+    def clean(self):
+        # Prevent enrolling in multiple batches of the same course
+        if self.student and self.batch:
+            other_enrollments = Enrollment.objects.filter(
+                student=self.student,
+                batch__course=self.batch.course
+            ).exclude(status='dropped')
+            
+            if self.pk:
+                other_enrollments = other_enrollments.exclude(pk=self.pk)
+            
+            if other_enrollments.exists():
+                existing = other_enrollments.first()
+                raise ValidationError(f"Student is already enrolled in batch '{existing.batch.name}' for this course. Only one batch per course is allowed.")
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
 
     class Meta:
         unique_together = ('student', 'batch')

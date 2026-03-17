@@ -4,6 +4,11 @@ from courses.models import Course, Lesson
 
 class Quiz(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='quizzes')
+    batch = models.ForeignKey(
+        'courses.Batch', on_delete=models.CASCADE, related_name='quizzes',
+        null=True, blank=True,
+        help_text='Leave blank to make available to all batches of this course.'
+    )
     lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, related_name='quizzes', null=True, blank=True)
     title = models.CharField(max_length=200)
     created_at = models.DateTimeField(auto_now_add=True)

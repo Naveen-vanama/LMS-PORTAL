@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import HttpResponseForbidden
 from django.utils import timezone
-from django.db.models import Avg, Count
+from django.db.models import Avg, Count, Q
 from .models import Assignment, AssignmentSubmission
 from .forms import AssignmentSubmissionForm, InstructorReviewForm, AssignmentCreateForm
 from .grading_service import AssignmentGradingService
@@ -31,7 +31,14 @@ def assignment_list(request, course_id):
         if not enrolled:
             return HttpResponseForbidden("You are not enrolled in this course.")
 
-    assignments = Assignment.objects.filter(course=course).order_by('lesson__created_at', 'created_at')
+    assignments = Assignment.objects.filter(course=course)
+    if user.role == 'student':
+        enrolled_batch_ids = Enrollment.objects.filter(
+            student=user, batch__course=course, status='active'
+        ).values_list('batch_id', flat=True)
+        assignments = assignments.filter(Q(batch__in=enrolled_batch_ids) | Q(batch__isnull=True))
+    
+    assignments = assignments.order_by('lesson__created_at', 'created_at')
 
     # Attach submission status for students
     submission_map = {}
@@ -54,13 +61,17 @@ def assignment_detail(request, pk):
 
     # Security: check enrollment (unless instructor/admin)
     if user.role not in ['instructor', 'admin']:
-        enrolled = Enrollment.objects.filter(
+        enrollment = Enrollment.objects.filter(
             student=user,
             batch__course=assignment.course,
             status='active'
-        ).exists()
-        if not enrolled:
+        ).first()
+        if not enrollment:
             return HttpResponseForbidden("You are not enrolled in this course.")
+        
+        # Check batch restriction
+        if assignment.batch and assignment.batch != enrollment.batch:
+            return HttpResponseForbidden("This assignment is not available for your batch.")
 
     # Check if already submitted
     existing_submission = AssignmentSubmission.objects.filter(
@@ -87,13 +98,17 @@ def submit_assignment(request, pk):
         return HttpResponseForbidden("Only students can submit assignments.")
 
     # Check enrollment
-    enrolled = Enrollment.objects.filter(
+    enrollment = Enrollment.objects.filter(
         student=user,
         batch__course=assignment.course,
         status='active'
-    ).exists()
-    if not enrolled:
+    ).first()
+    if not enrollment:
         return HttpResponseForbidden("You are not enrolled in this course.")
+        
+    # Check batch restriction
+    if assignment.batch and assignment.batch != enrollment.batch:
+        return HttpResponseForbidden("This assignment is not available for your batch.")
 
     # Prevent duplicate submissions
     if AssignmentSubmission.objects.filter(student=user, assignment=assignment).exists():

@@ -72,6 +72,14 @@ class Group(models.Model):
         blank=True,
         limit_choices_to={'role': 'student'},
     )
+    instructor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='groups_teaching',
+        limit_choices_to={'role__in': ['instructor', 'admin']},
+    )
 
     def __str__(self):
         return f"{self.batch} – {self.name}"

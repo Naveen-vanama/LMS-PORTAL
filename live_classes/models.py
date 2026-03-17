@@ -4,6 +4,11 @@ from courses.models import Course
 
 class LiveClass(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='live_classes')
+    batch = models.ForeignKey(
+        'courses.Batch', on_delete=models.CASCADE, related_name='live_classes',
+        null=True, blank=True,
+        help_text='Leave blank to make available to all batches of this course.'
+    )
     instructor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='conducted_live_classes')
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True)

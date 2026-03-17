@@ -1,6 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.http import HttpResponse, FileResponse, HttpResponseForbidden, HttpResponseNotFound
 import os
 import re
 from django.db.models import Q
@@ -19,11 +20,19 @@ def resource_list(request, course_pk):
     viewed_ids = []
     if request.user.is_student:
         from enrollments.models import Enrollment
+        from courses.models import Group
+        
         enrolled_batch_ids = Enrollment.objects.filter(
-            student=request.user, batch__course=course
+            student=request.user, batch__course=course, status='active'
         ).values_list('batch_id', flat=True)
+        
+        student_group_ids = Group.objects.filter(
+            batch__course=course, members=request.user
+        ).values_list('id', flat=True)
+
         resources = resources.filter(
-            Q(batch__in=enrolled_batch_ids) | Q(batch__isnull=True)
+            (Q(batch__in=enrolled_batch_ids) | Q(batch__isnull=True)) &
+            (Q(group__in=student_group_ids) | Q(group__isnull=True))
         )
         viewed_ids = list(ResourceView.objects.filter(student=request.user, resource__in=resources).values_list('resource_id', flat=True))
 
@@ -36,16 +45,20 @@ def resource_list(request, course_pk):
 def resource_upload(request, course_pk):
     """Allows instructors and admins to upload new course resources."""
     course = get_object_or_404(Course, pk=course_pk)
+    from courses.models import Group
+    is_group_instructor = Group.objects.filter(batch__course=course, instructor=request.user).exists()
+
     can_upload = (
         request.user == course.instructor or
         request.user.is_admin_role or
-        request.user.is_superuser
+        request.user.is_superuser or
+        is_group_instructor
     )
     if not can_upload:
         messages.error(request, 'Only instructors and admins can upload resources.')
         return redirect('resources:list', course_pk=course_pk)
 
-    form = FileResourceForm(request.POST or None, request.FILES or None, course=course)
+    form = FileResourceForm(request.POST or None, request.FILES or None, course=course, user=request.user)
     if request.method == 'POST' and form.is_valid():
         resource = form.save(commit=False)
         resource.course = course
@@ -114,6 +127,15 @@ def resource_view_track(request, pk):
     resource = get_object_or_404(FileResource, pk=pk)
     
     if request.user.is_student:
+        from enrollments.models import Enrollment
+        is_authorized = Enrollment.objects.filter(
+            student=request.user, batch__course=resource.course, status='active'
+        ).filter(Q(batch=resource.batch) | Q(batch__isnull=True)).exists()
+        
+        if not is_authorized:
+            messages.error(request, "Access denied. This resource is not available for your batch.")
+            return redirect('resources:list', course_pk=resource.course_id)
+            
         ResourceView.objects.get_or_create(student=request.user, resource=resource)
     
     url = resource.file.url if resource.file else resource.external_url
@@ -169,8 +191,17 @@ def resource_play(request, pk):
     """View to play/view a specific video resource with a custom player."""
     resource = get_object_or_404(FileResource, pk=pk)
     
-    # Mark as viewed if student
+    # Authorize if student
     if request.user.is_student:
+        from enrollments.models import Enrollment
+        is_authorized = Enrollment.objects.filter(
+            student=request.user, batch__course=resource.course, status='active'
+        ).filter(Q(batch=resource.batch) | Q(batch__isnull=True)).exists()
+        
+        if not is_authorized:
+            messages.error(request, "Access denied. This video is not available for your batch.")
+            return redirect('resources:list', course_pk=resource.course_id)
+            
         ResourceView.objects.get_or_create(student=request.user, resource=resource)
         
     is_external = bool(resource.external_url and not resource.file)
@@ -199,6 +230,17 @@ def resource_play(request, pk):
 def serve_video(request, pk):
     """Serves video files with support for Range requests (required for seeking)."""
     resource = get_object_or_404(FileResource, pk=pk)
+    
+    # Authorize if student
+    if request.user.is_student:
+        from enrollments.models import Enrollment
+        is_authorized = Enrollment.objects.filter(
+            student=request.user, batch__course=resource.course, status='active'
+        ).filter(Q(batch=resource.batch) | Q(batch__isnull=True)).exists()
+        
+        if not is_authorized:
+            return HttpResponseForbidden("Access denied. This video is not available for your batch.")
+
     if not resource.file:
         return redirect(resource.external_url)
 

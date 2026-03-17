@@ -1,6 +1,7 @@
 from django import forms
 from .models import Course, Batch, Group, Announcement, Lesson
 from users.models import CustomUser
+from django.db.models import Q
 
 
 class CourseForm(forms.ModelForm):
@@ -45,11 +46,30 @@ class GroupForm(forms.ModelForm):
 
     def __init__(self, *args, batch=None, **kwargs):
         super().__init__(*args, **kwargs)
+        self.batch = batch
         if batch:
             enrolled_students = CustomUser.objects.filter(
                 enrollments__batch=batch
             )
             self.fields['members'].queryset = enrolled_students
+
+    def clean_members(self):
+        members = self.cleaned_data.get('members')
+        batch = getattr(self, 'instance', None).batch if getattr(self, 'instance', None) and hasattr(self.instance, 'batch') else None
+        # If batch is not on instance, it might be passed in __init__
+        if not batch and hasattr(self, 'batch'):
+            batch = self.batch
+
+        if batch and members:
+            for student in members:
+                # Check if this student is already in another group for ANY batch of this course
+                other_groups = Group.objects.filter(batch__course=batch.course, members=student)
+                if self.instance.pk:
+                    other_groups = other_groups.exclude(pk=self.instance.pk)
+                
+                if other_groups.exists():
+                    raise forms.ValidationError(f"Student {student.username} is already assigned to group '{other_groups.first().name}' in this course. Only one group per course is allowed.")
+        return members
 
 
 class AnnouncementForm(forms.ModelForm):

@@ -2,6 +2,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
+from django.db.models import Q
 from .models import Quiz, Question, StudentAnswer, DailyQuiz
 from courses.models import Course
 from enrollments.models import Enrollment
@@ -60,11 +61,17 @@ def generate_quiz(request, course_id):
 @login_required
 def quiz_list(request, course_id):
     course = get_object_or_404(Course, id=course_id)
-    quizzes = course.quizzes.filter(is_published=True).order_by('-created_at')
+    quizzes = course.quizzes.filter(is_published=True)
+    if request.user.is_student:
+        enrolled_batch_ids = Enrollment.objects.filter(
+            student=request.user, batch__course=course, status='active'
+        ).values_list('batch_id', flat=True)
+        quizzes = quizzes.filter(Q(batch__in=enrolled_batch_ids) | Q(batch__isnull=True))
+    quizzes = quizzes.order_by('-created_at')
     
     # Simple check if enrolled (if student)
     if request.user.is_student:
-        is_enrolled = Enrollment.objects.filter(student=request.user, batch__course=course).exists()
+        is_enrolled = Enrollment.objects.filter(student=request.user, batch__course=course, status='active').exists()
         if not is_enrolled:
             messages.error(request, "You are not enrolled in this course.")
             return redirect('courses:list')
@@ -89,10 +96,15 @@ def take_quiz(request, quiz_id):
     quiz = get_object_or_404(Quiz, id=quiz_id)
     
     if request.user.is_student:
-        is_enrolled = Enrollment.objects.filter(student=request.user, batch__course=quiz.course).exists()
-        if not is_enrolled:
-            messages.error(request, "You are not enrolled in this course.")
+        enrollment = Enrollment.objects.filter(student=request.user, batch__course=quiz.course, status='active').first()
+        if not enrollment:
+            messages.error(request, "You are not an active student in this course.")
             return redirect('courses:list')
+            
+        # Check batch restriction
+        if quiz.batch and quiz.batch != enrollment.batch:
+            messages.error(request, "This quiz is not available for your batch.")
+            return redirect('quizzes:list', course_id=quiz.course.id)
             
         if StudentAnswer.objects.filter(student=request.user, question__quiz=quiz).exists():
             messages.info(request, "You have already completed this quiz.")
@@ -172,7 +184,7 @@ def start_daily_quiz(request, course_id):
         return redirect('courses:detail', pk=course_id)
         
     course = get_object_or_404(Course, id=course_id)
-    is_enrolled = Enrollment.objects.filter(student=request.user, batch__course=course).exists()
+    is_enrolled = Enrollment.objects.filter(student=request.user, batch__course=course, status='active').exists()
     if not is_enrolled:
         messages.error(request, "You are not enrolled in this course.")
         return redirect('courses:list')

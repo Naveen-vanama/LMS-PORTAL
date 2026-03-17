@@ -2,8 +2,9 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
+from django.db.models import Q
 from .models import LiveClass, LiveClassAttendance, LiveChatMessage
-from courses.models import Course
+from courses.models import Course, Batch
 from enrollments.models import Enrollment
 from .utils import send_live_class_notifications
 
@@ -13,14 +14,21 @@ def live_class_list(request, course_id):
     
     # Check if student is enrolled or user is instructor/admin
     is_instructor = (course.instructor == request.user) or request.user.is_instructor or request.user.is_staff
-    is_enrolled = Enrollment.objects.filter(student=request.user, batch__course=course).exists()
+    is_enrolled = Enrollment.objects.filter(student=request.user, batch__course=course, status='active').exists()
     
     if not (is_instructor or is_enrolled):
         messages.error(request, "You are not authorized to view live classes for this course.")
         return redirect('courses:detail', pk=course_id)
         
-    upcoming_classes = course.live_classes.filter(scheduled_time__gte=timezone.now()).order_by('scheduled_time')
-    past_classes = course.live_classes.filter(scheduled_time__lt=timezone.now()).order_by('-scheduled_time')
+    classes = course.live_classes.all()
+    if request.user.is_student:
+        enrolled_batch_ids = Enrollment.objects.filter(
+            student=request.user, batch__course=course, status='active'
+        ).values_list('batch_id', flat=True)
+        classes = classes.filter(Q(batch__in=enrolled_batch_ids) | Q(batch__isnull=True))
+    
+    upcoming_classes = classes.filter(scheduled_time__gte=timezone.now()).order_by('scheduled_time')
+    past_classes = classes.filter(scheduled_time__lt=timezone.now()).order_by('-scheduled_time')
     
     return render(request, 'live_classes/class_list.html', {
         'course': course,
@@ -42,6 +50,10 @@ def schedule_class(request, course_id):
         description = request.POST.get('description')
         scheduled_time = request.POST.get('scheduled_time')
         duration = request.POST.get('duration')
+        batch_id = request.POST.get('batch')
+        batch = None
+        if batch_id:
+            batch = get_object_or_404(Batch, id=batch_id, course=course)
         
         # Room name for Jitsi
         safe_title = "".join(x for x in title if x.isalnum())
@@ -50,6 +62,7 @@ def schedule_class(request, course_id):
         
         live_class = LiveClass.objects.create(
             course=course,
+            batch=batch,
             instructor=request.user,
             title=title,
             description=description,
@@ -62,7 +75,10 @@ def schedule_class(request, course_id):
         from notifications.services import notify_user
         from django.urls import reverse
         
-        enrolled_students = Enrollment.objects.filter(batch__course=course, status='active').select_related('student')
+        enrolled_students = Enrollment.objects.filter(batch__course=course, status='active')
+        if batch:
+            enrolled_students = enrolled_students.filter(batch=batch)
+        enrolled_students = enrolled_students.select_related('student')
         for enrollment in enrolled_students:
             notify_user(
                 user=enrollment.student,
@@ -76,7 +92,8 @@ def schedule_class(request, course_id):
         messages.success(request, f"Live class '{title}' scheduled successfully!")
         return redirect('live_classes:list', course_id=course.id)
         
-    return render(request, 'live_classes/schedule_form.html', {'course': course})
+    batches = course.batches.all()
+    return render(request, 'live_classes/schedule_form.html', {'course': course, 'batches': batches})
 
 @login_required
 def join_class(request, class_id):
@@ -85,8 +102,17 @@ def join_class(request, class_id):
     
     # Check enrollment/instructor
     is_instructor = (course.instructor == request.user) or request.user.is_instructor or request.user.is_staff
-    is_enrolled = Enrollment.objects.filter(student=request.user, batch__course=course).exists()
+    is_enrolled = Enrollment.objects.filter(student=request.user, batch__course=course, status='active').exists()
     
+    if request.user.is_student:
+        # Check if this specific class is for student's batch
+        batch_ids = Enrollment.objects.filter(
+            student=request.user, batch__course=course, status='active'
+        ).values_list('batch_id', flat=True)
+        if live_class.batch and live_class.batch_id not in batch_ids:
+            messages.error(request, "Access denied. This class is not for your batch.")
+            return redirect('live_classes:list', course_id=course.id)
+
     if not (is_instructor or is_enrolled):
         messages.error(request, "You are not authorized to join this live class.")
         return redirect('courses:list')

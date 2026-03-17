@@ -131,7 +131,7 @@ def process_payment(request, enrollment_pk):
             )
             
             if enrollment.status == Enrollment.Status.PENDING_PAYMENT:
-                enrollment.status = Enrollment.Status.ACTIVE
+                enrollment.status = Enrollment.Status.PENDING_APPROVAL
                 enrollment.save()
             
             from notifications.services import notify_user
@@ -255,7 +255,7 @@ def manual_payment_verify(request, enrollment_pk):
             transaction_id=f"MANUAL-{timezone.now().timestamp()}"
         )
         if enrollment.status == Enrollment.Status.PENDING_PAYMENT:
-            enrollment.status = Enrollment.Status.ACTIVE
+            enrollment.status = Enrollment.Status.PENDING_APPROVAL
             enrollment.save()
         from notifications.services import notify_user
         notify_user(

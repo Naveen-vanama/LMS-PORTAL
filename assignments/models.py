@@ -9,6 +9,11 @@ class Assignment(models.Model):
     ]
 
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='assignments')
+    batch = models.ForeignKey(
+        'courses.Batch', on_delete=models.CASCADE, related_name='assignments',
+        null=True, blank=True,
+        help_text='Leave blank to make available to all batches of this course.'
+    )
     lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, related_name='assignments')
     title = models.CharField(max_length=200)
     description = models.TextField()

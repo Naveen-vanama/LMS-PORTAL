@@ -9,4 +9,5 @@ urlpatterns = [
     path('unenroll/<int:batch_pk>/', views.unenroll, name='unenroll'),
     path('<int:pk>/grade/', views.grade_update, name='grade_update'),
     path('<int:pk>/complete/', views.mark_complete, name='mark_complete'),
+    path('<int:pk>/approve/', views.approve_enrollment, name='approve'),
 ]

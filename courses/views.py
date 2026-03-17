@@ -35,9 +35,18 @@ def course_list(request):
 def course_detail(request, pk):
     course = get_object_or_404(Course, pk=pk)
     batches = course.batches.annotate(enrollment_count=Count('enrollments'))
-    announcements = course.announcements.all()[:5]  # Latest 5
-    
+    announcements = course.announcements.all()
     student_enrolled_batch_ids = []
+    
+    if request.user.is_student:
+        student_enrolled_batch_ids = list(
+            Enrollment.objects.filter(student=request.user, batch__course=course)
+            .exclude(status=Enrollment.Status.DROPPED)
+            .values_list('batch_id', flat=True)
+        )
+        announcements = announcements.filter(Q(batch__in=student_enrolled_batch_ids) | Q(batch__isnull=True))
+    
+    announcements = announcements[:5]  # Latest 5
     progress = None
     
     if request.user.is_student:

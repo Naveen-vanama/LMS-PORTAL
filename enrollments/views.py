@@ -35,7 +35,7 @@ def enroll(request, batch_pk):
     elif batch.course.price > 0:
         status = Enrollment.Status.PENDING_PAYMENT
     else:
-        status = Enrollment.Status.ACTIVE
+        status = Enrollment.Status.PENDING_APPROVAL
 
     enrollment, created = Enrollment.objects.get_or_create(
         student=request.user, batch=batch,
@@ -46,7 +46,10 @@ def enroll(request, batch_pk):
         if status == Enrollment.Status.PENDING_PAYMENT:
             messages.info(request, f'Step 1: Enrollment created. Please complete the payment to activate your seat.')
             return redirect('payments:checkout', enrollment_pk=enrollment.pk)
-        messages.success(request, f'Enrolled in {batch} successfully!')
+        elif status == Enrollment.Status.PENDING_APPROVAL:
+            messages.success(request, f'Enrollment request submitted for {batch}. Awaiting admin approval.')
+        else:
+            messages.success(request, f'Enrolled in {batch} successfully!')
     else:
         if enrollment.status == Enrollment.Status.PENDING_PAYMENT:
             return redirect('payments:checkout', enrollment_pk=enrollment.pk)
@@ -164,4 +167,22 @@ def mark_complete(request, pk):
             messages.warning(request, f'Marked as Completed, but certificate not issued: {error}')
         else:
             messages.success(request, f'Marked {enrollment.student.get_full_name() or enrollment.student.username} as Completed.')
+    return redirect('enrollments:list')
+
+@login_required
+def approve_enrollment(request, pk):
+    """Instructor/Admin approves a pending enrollment."""
+    enrollment = get_object_or_404(Enrollment, pk=pk)
+    if not (request.user == enrollment.batch.course.instructor or
+            request.user.is_admin_role or request.user.is_superuser):
+        messages.error(request, 'Permission denied.')
+        return redirect('enrollments:list')
+    
+    if request.method == 'POST':
+        if enrollment.status in [Enrollment.Status.PENDING_APPROVAL, Enrollment.Status.WAITLISTED]:
+            enrollment.status = Enrollment.Status.ACTIVE
+            enrollment.save(update_fields=['status'])
+            messages.success(request, f'Enrollment for {enrollment.student.get_full_name() or enrollment.student.username} approved.')
+        else:
+            messages.warning(request, f'Cannot approve an enrollment with status: {enrollment.get_status_display()}')
     return redirect('enrollments:list')

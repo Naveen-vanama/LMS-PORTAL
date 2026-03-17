@@ -47,7 +47,7 @@
           </td>
           <td>{{ e.batch.name }}</td>
           <td>
-            <span class="badge {% if e.status == 'active' %}bg-success{% elif e.status == 'completed' %}bg-primary{% elif e.status == 'dropped' %}bg-danger{% elif e.status == 'pending_payment' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+            <span class="badge {% if e.status == 'active' %}bg-success{% elif e.status == 'completed' %}bg-primary{% elif e.status == 'dropped' %}bg-danger{% elif e.status == 'pending_payment' or e.status == 'pending_approval' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
               {{ e.get_status_display }}
             </span>
           </td>
@@ -103,6 +103,14 @@
                  class="btn btn-sm btn-outline-secondary" title="Attendance">
                 <i class="bi bi-calendar-check"></i>
               </a>
+               {% if e.status != 'completed' and e.status != 'active' and e.status != 'pending_payment' %}
+              <form method="post" action="{% url 'enrollments:approve' e.pk %}" class="d-inline">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-success" title="Approve Enrollment">
+                  <i class="bi bi-person-check-fill"></i> Approve
+                </button>
+              </form>
+              {% endif %}
               {% if e.status != 'completed' %}
               <form method="post" action="{% url 'enrollments:mark_complete' e.pk %}" class="d-inline">
                 {% csrf_token %}

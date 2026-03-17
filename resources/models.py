@@ -26,6 +26,11 @@ class FileResource(models.Model):
         null=True, blank=True,
         help_text='Leave blank to make available to all batches of this course.'
     )
+    group = models.ForeignKey(
+        'courses.Group', on_delete=models.CASCADE, related_name='resources',
+        null=True, blank=True,
+        help_text='Make available only to a specific group (e.g. for projects).'
+    )
     file = models.FileField(upload_to='resources/%Y/%m/', blank=True, null=True)
     external_url = models.URLField(blank=True)   # for video links etc.
     uploaded_by = models.ForeignKey(
