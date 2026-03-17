@@ -614,7 +614,7 @@
 
       .sidebar-footer {
         /* Keep footer visible on mobile so logout is visible */
-        display: block;
+        display: block !important;
       }
 
       /* hide desktop collapse btn on mobile */
@@ -833,6 +833,7 @@
     <!-- Footer Area (Logout + Collapse) -->
     <div class="sidebar-footer">
       <!-- Sticky Logout Button -->
+      {% if request.user.is_authenticated %}
       <ul style="list-style:none;padding:0;margin:0 0 10px 0;">
         <li class="sidebar-item" style="padding:0;">
           <a href="{% url 'users:logout' %}" class="sidebar-link logout-link text-danger" data-tooltip="Logout">
@@ -841,6 +842,7 @@
           </a>
         </li>
       </ul>
+      {% endif %}
 
       <!-- Collapse toggle (desktop only) -->
       <button id="sidebarCollapseBtn" title="Toggle sidebar">
