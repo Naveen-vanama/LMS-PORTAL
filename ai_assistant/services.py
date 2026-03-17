@@ -140,7 +140,8 @@ class RAGService:
         context = "\n\n---\n\n".join(context_texts)
         
         if not context:
-            context = "No course materials indexed yet. Please inform the student."
+            # FAISS fallback / empty materials handling (Requirement 5)
+            context = "Note: No specific course materials have been indexed for this course yet. The following answer is based on general knowledge, but please verify with your instructor."
             
         # 3. Call LLM
         prompt = f"""You are an AI learning assistant integrated into an LMS course platform. 
@@ -161,15 +162,23 @@ class RAGService:
     def _call_llm(self, prompt):
         api_key = getattr(settings, 'GOOGLE_API_KEY', os.environ.get('GOOGLE_API_KEY'))
         if not api_key or not genai:
-            return "The AI Assistant is currently unavilable because the API key is not configured."
+            return "The AI Assistant is currently unavailable because the API key is not configured. Please contact the administrator."
             
         try:
-            model = genai.GenerativeModel('gemini-2.5-flash')
+            # Use requested model: models/gemini-2.5-flash (Requirement 2)
+            model = genai.GenerativeModel('models/gemini-2.5-flash')
             response = model.generate_content(prompt)
+            
+            if not response or not response.text:
+                 logger.error("Gemini returned an empty response.")
+                 return "I'm sorry, I couldn't generate a response at this moment. Please try again later."
+                 
             return response.text
         except Exception as e:
-            logger.error(f"LLM Error: {e}")
-            return "An internal error occurred while generating the response."
+            # Log actual error using logging (Requirement 4)
+            logger.error(f"Gemini API Error: {str(e)}", exc_info=True)
+            # Return user-friendly error message (Requirement 6)
+            return f"I encountered an issue while connecting to the AI service: {str(e)}. Please try again in a few moments."
             
     def test_rag_pipeline(self, question):
         # 1. Embed Question

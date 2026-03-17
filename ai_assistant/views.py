@@ -1,3 +1,4 @@
+import logging
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
@@ -5,6 +6,8 @@ from .models import ChatMessage
 from .services import RAGService
 from enrollments.models import Enrollment
 from courses.models import Course
+
+logger = logging.getLogger(__name__)
 
 class AskAssistantView(APIView):
     permission_classes = [IsAuthenticated]
@@ -23,9 +26,18 @@ class AskAssistantView(APIView):
             if not is_enrolled:
                 return Response({'error': 'You are not enrolled in this course.'}, status=403)
 
-        # Call the RAG pipeline
-        rag_svc = RAGService(course_id=course_id)
-        answer = rag_svc.generate_answer(question)
+        # Call the RAG pipeline with error handling
+        try:
+            rag_svc = RAGService(course_id=course_id)
+            answer = rag_svc.generate_answer(question)
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"AI Assistant View Error: {str(e)}", exc_info=True)
+            return Response({
+                'error': 'An internal error occurred while generating the response.',
+                'details': str(e)
+            }, status=500)
 
         # Save chat directly to the database
         msg = ChatMessage.objects.create(
