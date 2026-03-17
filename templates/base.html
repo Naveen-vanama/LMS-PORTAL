@@ -66,7 +66,8 @@
       top: 0;
       left: 0;
       width: var(--sb-width);
-      height: 100vh;
+      height: 100%; /* Fallback */
+      height: 100dvh;
       background: var(--sb-bg);
       display: flex;
       flex-direction: column;
@@ -169,7 +170,8 @@
 
     /* -- Nav Scroll Area --------------------------------------------------- */
     .sidebar-content {
-      flex: 1;
+      flex: 1 1 auto;
+      min-height: 0; /* Crucial: allows it to shrink and scroll instead of expanding */
       overflow-y: auto;
       padding: .75rem 0;
     }
@@ -285,8 +287,11 @@
     .sidebar-footer {
       border-top: 1px solid var(--sb-border);
       padding: .65rem;
+      padding-bottom: max(.65rem, env(safe-area-inset-bottom));
       flex-shrink: 0;
       margin-top: auto;
+      background: var(--sb-bg);
+      z-index: 10;
     }
 
     #sidebarCollapseBtn {
