@@ -95,9 +95,18 @@
         {% endif %}
       </div>
       {% for a in announcements %}
-      <div class="border-start border-4 border-warning ps-3 mb-3">
-        <div class="fw-bold small">{{ a.title }}</div>
-        <div class="text-muted small mb-1">{{ a.created_at|date:"M d, Y" }} Â· {{ a.author.get_full_name|default:a.author.username }}</div>
+      <div class="border-start border-4 border-warning ps-3 mb-3 position-relative">
+        <div class="d-flex justify-content-between align-items-start">
+            <div>
+                <div class="fw-bold small">{{ a.title }}</div>
+                <div class="text-muted small mb-1">{{ a.created_at|date:"M d, Y" }} · {{ a.author.get_full_name|default:a.author.username }}</div>
+            </div>
+            {% if user.is_admin_role or user.is_superuser or user == course.instructor or user == a.author or is_group_instructor %}
+            <a href="{% url 'courses:announcement_delete' a.pk %}" class="text-danger small" title="Delete Announcement">
+                <i class="fas fa-trash-alt"></i>
+            </a>
+            {% endif %}
+        </div>
         <p class="small mb-0">{{ a.content|linebreaksbr }}</p>
       </div>
       {% empty %}

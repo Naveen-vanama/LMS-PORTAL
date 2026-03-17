@@ -13,4 +13,5 @@ urlpatterns = [
     path('<int:course_pk>/announcement/create/', views.announcement_create, name='announcement_create'),
     path('<int:course_id>/ai-generator/', views.course_generator, name='course_generator'),
     path('<int:course_id>/generator-preview/', views.generator_preview, name='generator_preview'),
+    path('announcement/<int:pk>/delete/', views.announcement_delete, name='announcement_delete'),
 ]

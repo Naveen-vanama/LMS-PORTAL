@@ -46,7 +46,11 @@ def course_detail(request, pk):
         )
         announcements = announcements.filter(Q(batch__in=student_enrolled_batch_ids) | Q(batch__isnull=True))
     
-    announcements = announcements[:5]  # Latest 5
+    announcements = announcements[:10]  # Show more announcements
+    
+    # Check if user is a group instructor for THIS course
+    is_group_instructor = Group.objects.filter(batch__course=course, instructor=request.user).exists()
+    
     progress = None
     
     if request.user.is_student:
@@ -81,6 +85,7 @@ def course_detail(request, pk):
         'student_enrolled_batch_ids': student_enrolled_batch_ids,
         'progress': progress,
         'enrollments': enrollments if request.user.is_student else [],
+        'is_group_instructor': is_group_instructor,
     })
 
 
@@ -287,4 +292,28 @@ def generator_preview(request, course_id):
     return render(request, 'courses/generator_preview.html', {
         'course': course,
         'form': form
+    })
+
+@login_required
+def announcement_delete(request, pk):
+    announcement = get_object_or_404(Announcement, pk=pk)
+    course_id = announcement.course.id
+    
+    # Check permissions: Admin or Primary Instructor or Author or Group Instructor
+    is_group_instructor = Group.objects.filter(batch__course=announcement.course, instructor=request.user).exists()
+    
+    if not (request.user.is_admin_role or request.user.is_superuser or 
+            request.user == announcement.course.instructor or 
+            request.user == announcement.author or
+            is_group_instructor):
+        messages.error(request, 'Permission denied.')
+        return redirect('courses:detail', pk=course_id)
+    
+    if request.method == 'POST':
+        announcement.delete()
+        messages.success(request, 'Announcement deleted successfully.')
+        return redirect('courses:detail', pk=course_id)
+        
+    return render(request, 'courses/announcement_confirm_delete.html', {
+        'announcement': announcement
     })

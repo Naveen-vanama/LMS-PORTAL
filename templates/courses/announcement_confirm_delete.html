@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% block title %}Delete Announcement - {{ announcement.title }}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-4">
+                    <h2 class="h4 mb-4 text-danger">Confirm Deletion</h2>
+                    <p class="mb-4">Are you sure you want to delete the announcement: <strong>"{{ announcement.title }}"</strong>?</p>
+                    
+                    <div class="p-3 bg-light rounded mb-4 border-start border-4 border-warning">
+                        <div class="fw-bold small">{{ announcement.title }}</div>
+                        <div class="text-muted small mb-2">{{ announcement.created_at|date:"M d, Y" }}</div>
+                        <p class="small mb-0">{{ announcement.content|linebreaksbr }}</p>
+                    </div>
+
+                    <form method="post" class="d-flex gap-2">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger flex-grow-1">
+                            <i class="fas fa-trash-alt me-2"></i>Delete Permanently
+                        </button>
+                        <a href="{% url 'courses:detail' announcement.course.id %}" class="btn btn-light flex-grow-1">Cancel</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
