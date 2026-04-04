@@ -19,6 +19,20 @@ from live_classes.models import LiveClass
 from django.core.mail import send_mail
 
 
+def landing_view(request):
+    if request.user.is_authenticated:
+        return redirect('users:dashboard')
+    
+    context = {
+        'total_courses': Course.objects.count(),
+        'total_students': CustomUser.objects.filter(role='student').count(),
+        'total_instructors': CustomUser.objects.filter(role='instructor').count(),
+        'recent_courses': Course.objects.all().order_by('-created_at')[:3],
+        'no_container': True,
+    }
+    return render(request, 'landing.html', context)
+
+
 def login_view(request):
     if request.user.is_authenticated:
         return redirect('users:dashboard')

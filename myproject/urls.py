@@ -6,8 +6,10 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.shortcuts import redirect
 
+from users import views as user_views
+
 urlpatterns = [
-    path('', lambda request: redirect('users:dashboard'), name='home'),
+    path('', user_views.landing_view, name='home'),
     path('admin/', admin.site.urls),
     path('', include('users.urls')),
     path('users/', include('users.urls', namespace='users')),
